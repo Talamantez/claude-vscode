@@ -5,3 +5,4 @@ out/
 *.vsix
 .DS_Store
 .pnpm-store/
+concatenated_code.txt

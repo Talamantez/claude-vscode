@@ -1,21 +1,52 @@
 {
-  "name": "claude-vscode",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/vscode": "^1.95.0",
-    "@typescript-eslint/eslint-plugin": "^8.14.0",
-    "@typescript-eslint/parser": "^8.14.0",
-    "esbuild": "^0.24.0",
-    "eslint": "^9.14.0",
-    "typescript": "^5.6.3",
-    "vscode": "^1.1.37"
+    "name": "claude-vscode",
+    "version": "0.0.1",
+    "engines": {
+      "vscode": "^1.80.0",
+      "node": ">=16.0.0"
+    },
+    "activationEvents": [],
+    "main": "./dist/extension.js",
+    "publisher": "your-publisher-name",
+    "categories": ["Other"],
+    "contributes": {
+      "commands": [{
+        "command": "claude-vscode.askClaude",
+        "title": "Ask Claude"
+      }],
+      "configuration": {
+        "title": "Claude VSCode",
+        "properties": {
+          "claude-vscode.apiEndpoint": {
+            "type": "string",
+            "default": "",
+            "description": "Claude API endpoint URL"
+          },
+          "claude-vscode.apiKey": {
+            "type": "string",
+            "default": "",
+            "description": "Claude API Key"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "vscode:prepublish": "pnpm run build",
+      "build": "node esbuild.js --production",
+      "watch": "node esbuild.js --watch",
+      "lint": "eslint src --ext ts"
+    },
+    "devDependencies": {
+      "@types/node": "^20.10.0",
+      "@types/vscode": "^1.80.0",
+      "@types/node-fetch": "^2.6.9",
+      "@typescript-eslint/eslint-plugin": "^6.12.0",
+      "@typescript-eslint/parser": "^6.12.0",
+      "esbuild": "^0.19.8",
+      "eslint": "^8.54.0",
+      "typescript": "^5.3.2"
+    },
+    "dependencies": {
+      "node-fetch": "^2.7.0"
+    }
   }
-}
