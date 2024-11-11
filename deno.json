@@ -1,0 +1,13 @@
+{
+    "tasks": {
+        "dev": "deno run --allow-net --allow-env --allow-read --watch main.ts",
+        "start": "deno run --allow-net --allow-env --allow-read main.ts"
+    },
+    "imports": {
+        "vscode": "npm:@types/vscode",
+        "node-fetch": "npm:node-fetch@2.7.0"
+    },
+    "compilerOptions": {
+        "lib": ["deno.window", "dom"]
+    }
+}
