@@ -1,0 +1,7 @@
+﻿node_modules/
+.env
+dist/
+out/
+*.vsix
+.DS_Store
+.pnpm-store/
