@@ -1,12 +1,22 @@
 # Changelog
 
-> ⚠️ **DEVELOPMENT STATUS**: This project is in active development. Versions below 1.0.0 should be considered unstable and may contain security issues that are being actively addressed.
-
-## [Unreleased]
-All notable changes to the "Claude AI Assistant" extension will be documented in this file.
-
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2024-03-12
+### Official Stable Release! 🎉
+- Everything you need, nothing you don't
+- Stable, tested, and ready for daily use
+- Full support for Claude 3 models
+
+### Features
+- Direct Claude integration in VS Code
+- Code documentation generation
+- Smart context handling
+- Clean Markdown responses
+- Progress indicators
+- Token usage tracking
+- Model selection (Opus/Sonnet)
 
 ## [0.1.1] - 2024-03-12
 ### Added

@@ -1,8 +1,8 @@
 {
   "name": "claude-vscode-assistant",
   "displayName": "Claude AI Assistant",
-  "version": "0.1.1",
-  "description": "Official Claude AI assistant for Visual Studio Code",
+  "version": "1.0.0",
+  "description": "Claude AI assistant for Visual Studio Code",
   "publisher": "conscious-robot",
   "repository": {
     "type": "git",
