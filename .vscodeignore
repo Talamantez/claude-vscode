@@ -1,0 +1,25 @@
+.vscode/**
+.vscode-test/**
+src/**
+out/**
+node_modules/**
+**/*.map
+**/*.ts
+.gitignore
+.env
+deno.deploy.json
+deno.json
+esbuild.js
+concatenated_code.txt
+main.ts
+tsconfig.json
+.eslintrc.json
+.prettierrc
+**/tsconfig.json
+**/.eslintrc.json
+.nvmrc
+*.vsix
+.npmignore
+
+# Don't ignore these files
+!logo.png

@@ -1,6 +1,5 @@
 // src/api.ts
-import { window } from 'vscode';
-import fetch from 'node-fetch';
+import * as vscode from 'vscode';
 import { getConfiguration } from './config.ts';
 
 interface ClaudeMessageContent {
@@ -45,12 +44,7 @@ export async function askClaude(text: string): Promise<ClaudeResponse> {
         const data = await response.json();
         return data;
     } catch (error) {
-        if (error instanceof Error) {
-            window.showErrorMessage(`Failed to call Claude: ${error.message}`);
-            throw error;
-        } else {
-            window.showErrorMessage('Failed to call Claude: Unknown error');
-            throw new Error('Unknown error occurred');
-        }
+        vscode.window.showErrorMessage(`Failed to call Claude: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw error;
     }
 }
