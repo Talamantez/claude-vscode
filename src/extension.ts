@@ -1,12 +1,10 @@
 ﻿// src/extension.ts
 import * as vscode from 'vscode';
-import { askClaude } from './api';
+import { askClaude } from './api.ts';
 
 export function activate(context: vscode.ExtensionContext) {
-    // Create status bar items
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    const tokenCountItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
-    context.subscriptions.push(statusBarItem, tokenCountItem);
+    context.subscriptions.push(statusBarItem);
 
     let disposable = vscode.commands.registerCommand('claude-vscode.askClaude', async () => {
         const editor = vscode.window.activeTextEditor;
@@ -37,42 +35,24 @@ export function activate(context: vscode.ExtensionContext) {
                 return await askClaude(text);
             });
 
-            // Format the response with metadata
-            const { content, usage, model } = response;
-            
-            // Update token count display
-            if (usage) {
-                tokenCountItem.text = `$(symbol-number) Tokens: ${usage.input_tokens}↑ ${usage.output_tokens}↓`;
-                tokenCountItem.tooltip = 'Input and output tokens used in last request';
-                tokenCountItem.show();
-            }
-
-            // Create formatted response
-            const formattedResponse = [
-                '# Claude Response',
-                `> Using ${model}`,
-                '',
-                content,
-                '',
-                '---',
-                `*Tokens used: ${usage?.input_tokens} input, ${usage?.output_tokens} output*`
-            ].join('\n');
-
-            // Hide working status
+            // Hide status
             statusBarItem.hide();
+
+            // Format the response nicely
+            const formattedResponse = formatResponse(text, response);
 
             // Show response in new editor
             const doc = await vscode.workspace.openTextDocument({
                 content: formattedResponse,
                 language: 'markdown'
             });
-            await vscode.window.showTextDocument(doc, { preview: true });
+            await vscode.window.showTextDocument(doc, { 
+                preview: true,
+                viewColumn: vscode.ViewColumn.Beside // Opens side by side
+            });
 
         } catch (error) {
-            // Hide status on error
             statusBarItem.hide();
-            tokenCountItem.hide();
-            
             if (error instanceof Error) {
                 vscode.window.showErrorMessage(`Error: ${error.message}`);
             } else {
@@ -82,6 +62,26 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(disposable);
+}
+
+function formatResponse(prompt: string, response: any): string {
+    const now = new Date().toLocaleString();
+    
+    return [
+        `# Claude Response (${now})`,
+        '',
+        '## Your Prompt',
+        '```',
+        prompt,
+        '```',
+        '',
+        '## Response',
+        response.content[0].text,
+        '',
+        '---',
+        `*Using ${response.model}*`,
+        `*Tokens: ${response.usage?.input_tokens} input, ${response.usage?.output_tokens} output*`
+    ].join('\n');
 }
 
 export function deactivate() {}
