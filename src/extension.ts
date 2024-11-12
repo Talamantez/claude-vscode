@@ -3,9 +3,10 @@ import * as vscode from 'vscode';
 import { askClaude } from './api';
 
 export function activate(context: vscode.ExtensionContext) {
-    // Create status bar item
+    // Create status bar items
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    context.subscriptions.push(statusBarItem);
+    const tokenCountItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
+    context.subscriptions.push(statusBarItem, tokenCountItem);
 
     let disposable = vscode.commands.registerCommand('claude-vscode.askClaude', async () => {
         const editor = vscode.window.activeTextEditor;
@@ -36,12 +37,33 @@ export function activate(context: vscode.ExtensionContext) {
                 return await askClaude(text);
             });
 
-            // Hide status
+            // Format the response with metadata
+            const { content, usage, model } = response;
+            
+            // Update token count display
+            if (usage) {
+                tokenCountItem.text = `$(symbol-number) Tokens: ${usage.input_tokens}↑ ${usage.output_tokens}↓`;
+                tokenCountItem.tooltip = 'Input and output tokens used in last request';
+                tokenCountItem.show();
+            }
+
+            // Create formatted response
+            const formattedResponse = [
+                '# Claude Response',
+                `> Using ${model}`,
+                '',
+                content,
+                '',
+                '---',
+                `*Tokens used: ${usage?.input_tokens} input, ${usage?.output_tokens} output*`
+            ].join('\n');
+
+            // Hide working status
             statusBarItem.hide();
 
             // Show response in new editor
             const doc = await vscode.workspace.openTextDocument({
-                content: response,
+                content: formattedResponse,
                 language: 'markdown'
             });
             await vscode.window.showTextDocument(doc, { preview: true });
@@ -49,6 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
         } catch (error) {
             // Hide status on error
             statusBarItem.hide();
+            tokenCountItem.hide();
             
             if (error instanceof Error) {
                 vscode.window.showErrorMessage(`Error: ${error.message}`);

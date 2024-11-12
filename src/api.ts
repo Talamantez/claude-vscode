@@ -2,17 +2,12 @@
 import { window } from 'vscode';
 import fetch from 'node-fetch';
 
-interface ClaudeContent {
-    type: string;
-    text: string;
-}
-
-interface ClaudeMessage {
+interface ClaudeResponse {
     id: string;
     type: string;
     role: string;
     model: string;
-    content: ClaudeContent[];
+    content: string;
     stop_reason: string;
     stop_sequence: string;
     usage: {
@@ -21,7 +16,7 @@ interface ClaudeMessage {
     };
 }
 
-export async function askClaude(text: string): Promise<string> {
+export async function askClaude(text: string): Promise<ClaudeResponse> {
     try {
         const response = await fetch('https://long-ferret-58.deno.dev', {
             method: 'POST',
@@ -38,17 +33,22 @@ export async function askClaude(text: string): Promise<string> {
             throw new Error(`API error: ${response.status} - ${errorData}`);
         }
 
-        const data = await response.json() as ClaudeMessage;
+        const data = await response.json();
         
-        // Extract just the text content from Claude's response
-        if (data.content && data.content.length > 0) {
-            const textContent = data.content.find(c => c.type === 'text');
-            if (textContent) {
-                return textContent.text;
-            }
-        }
+        // Extract text from content array
+        const textContent = data.content.find((c: any) => c.type === 'text')?.text || '';
         
-        throw new Error('No text content found in response');
+        // Return formatted response
+        return {
+            id: data.id,
+            type: data.type,
+            role: data.role,
+            model: data.model,
+            content: textContent,
+            stop_reason: data.stop_reason,
+            stop_sequence: data.stop_sequence,
+            usage: data.usage
+        };
     } catch (error) {
         if (error instanceof Error) {
             window.showErrorMessage(`Failed to call Claude: ${error.message}`);
