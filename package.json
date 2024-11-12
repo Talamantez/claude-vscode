@@ -6,7 +6,7 @@
   "publisher": "conscious-robot",
   "repository": {
     "type": "git",
-    "url": "https://github.com/conscious-robot/claude-vscode"
+    "url": "https://github.com/talamantez/claude-vscode"
   },
   "engines": {
     "vscode": "^1.80.0"
