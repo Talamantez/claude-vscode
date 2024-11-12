@@ -1,8 +1,8 @@
 {
   "name": "claude-vscode-assistant",
   "displayName": "Claude AI Assistant",
-  "version": "0.1.0",
-  "description": "Interact with Claude AI directly from VSCode",
+  "version": "0.1.1",
+  "description": "Official Claude AI assistant for Visual Studio Code",
   "publisher": "conscious-robot",
   "repository": {
     "type": "git",
@@ -12,11 +12,23 @@
     "vscode": "^1.80.0"
   },
   "categories": [
+    "Machine Learning",
+    "Programming Languages",
     "Other"
   ],
-  "activationEvents": [],
+  "keywords": [
+    "claude",
+    "ai",
+    "assistant",
+    "anthropic",
+    "code"
+  ],
+  "activationEvents": [
+    "onCommand:claude-vscode.askClaude",
+    "onCommand:claude-vscode.documentCode"
+  ],
   "main": "./dist/extension.js",
-  "icon": "./logo.png",
+  "icon": "logo.png",
   "contributes": {
     "commands": [
       {
@@ -34,14 +46,22 @@
         "claude-vscode.model": {
           "type": "string",
           "default": "claude-3-opus-20240229",
-          "description": "The Claude model to use"
+          "description": "The Claude model to use for requests",
+          "enum": [
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229"
+          ],
+          "enumDescriptions": [
+            "Most powerful model, best for complex tasks",
+            "Faster model, good for shorter responses"
+          ]
         }
       }
     }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run build",
-    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
     "watch": "node esbuild.js --watch",
     "package": "vsce package",
     "publish": "vsce publish"
@@ -52,7 +72,5 @@
     "esbuild": "^0.19.0",
     "typescript": "^5.0.0",
     "@vscode/vsce": "^2.24.0"
-  },
-  "dependencies": {
   }
 }
