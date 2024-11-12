@@ -2,14 +2,12 @@
 import * as vscode from 'vscode';
 
 export interface Configuration {
-    apiEndpoint: string;
-    apiKey: string;
+    model: string;
 }
 
 export function getConfiguration(): Configuration {
     const config = vscode.workspace.getConfiguration('claude-vscode');
     return {
-        apiEndpoint: config.get('apiEndpoint') || '',
-        apiKey: config.get('apiKey') || ''
+        model: config.get('model') || 'claude-3-opus-20240229'
     };
 }

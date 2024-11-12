@@ -1,13 +1,19 @@
 // src/api.ts
 import { window } from 'vscode';
 import fetch from 'node-fetch';
+import { getConfiguration } from './config.ts';
+
+interface ClaudeMessageContent {
+    type: string;
+    text: string;
+}
 
 interface ClaudeResponse {
     id: string;
     type: string;
     role: string;
     model: string;
-    content: string;
+    content: ClaudeMessageContent[];
     stop_reason: string;
     stop_sequence: string;
     usage: {
@@ -17,6 +23,8 @@ interface ClaudeResponse {
 }
 
 export async function askClaude(text: string): Promise<ClaudeResponse> {
+    const config = getConfiguration();
+    
     try {
         const response = await fetch('https://long-ferret-58.deno.dev', {
             method: 'POST',
@@ -24,7 +32,8 @@ export async function askClaude(text: string): Promise<ClaudeResponse> {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                prompt: text
+                prompt: text,
+                model: config.model
             })
         });
 
@@ -34,21 +43,7 @@ export async function askClaude(text: string): Promise<ClaudeResponse> {
         }
 
         const data = await response.json();
-        
-        // Extract text from content array
-        const textContent = data.content.find((c: any) => c.type === 'text')?.text || '';
-        
-        // Return formatted response
-        return {
-            id: data.id,
-            type: data.type,
-            role: data.role,
-            model: data.model,
-            content: textContent,
-            stop_reason: data.stop_reason,
-            stop_sequence: data.stop_sequence,
-            usage: data.usage
-        };
+        return data;
     } catch (error) {
         if (error instanceof Error) {
             window.showErrorMessage(`Failed to call Claude: ${error.message}`);
