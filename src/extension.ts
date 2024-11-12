@@ -1,9 +1,12 @@
 ﻿// src/extension.ts
 import * as vscode from 'vscode';
 import { askClaude } from './api';
-import { getConfiguration } from './config';
 
 export function activate(context: vscode.ExtensionContext) {
+    // Create status bar item
+    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    context.subscriptions.push(statusBarItem);
+
     let disposable = vscode.commands.registerCommand('claude-vscode.askClaude', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
@@ -20,6 +23,10 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
+            // Show working status
+            statusBarItem.text = "$(sync~spin) Asking Claude...";
+            statusBarItem.show();
+
             // Show progress
             const response = await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
@@ -29,6 +36,9 @@ export function activate(context: vscode.ExtensionContext) {
                 return await askClaude(text);
             });
 
+            // Hide status
+            statusBarItem.hide();
+
             // Show response in new editor
             const doc = await vscode.workspace.openTextDocument({
                 content: response,
@@ -37,9 +47,18 @@ export function activate(context: vscode.ExtensionContext) {
             await vscode.window.showTextDocument(doc, { preview: true });
 
         } catch (error) {
-            vscode.window.showErrorMessage(`Error: ${error.message}`);
+            // Hide status on error
+            statusBarItem.hide();
+            
+            if (error instanceof Error) {
+                vscode.window.showErrorMessage(`Error: ${error.message}`);
+            } else {
+                vscode.window.showErrorMessage('An unknown error occurred');
+            }
         }
     });
 
     context.subscriptions.push(disposable);
 }
+
+export function deactivate() {}

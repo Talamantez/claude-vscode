@@ -1,34 +1,35 @@
 // src/api.ts
 import { window } from 'vscode';
-import { getConfiguration } from './config';
 import fetch from 'node-fetch';
 
-interface ClaudeResponse {
-    content: Array<{type: string, text: string}>;
+interface ClaudeContent {
+    type: string;
+    text: string;
+}
+
+interface ClaudeMessage {
+    id: string;
+    type: string;
+    role: string;
+    model: string;
+    content: ClaudeContent[];
+    stop_reason: string;
+    stop_sequence: string;
+    usage: {
+        input_tokens: number;
+        output_tokens: number;
+    };
 }
 
 export async function askClaude(text: string): Promise<string> {
-    const config = getConfiguration();
-    
-    if (!config.apiKey) {
-        throw new Error('Claude API key not configured');
-    }
-
     try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetch('https://long-ferret-58.deno.dev', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': config.apiKey,
-                'anthropic-version': '2023-06-01'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ 
-                messages: [{
-                    role: "user",
-                    content: text
-                }],
-                model: "claude-3-opus-20240229",
-                max_tokens: 1024
+                prompt: text
             })
         });
 
@@ -37,13 +38,24 @@ export async function askClaude(text: string): Promise<string> {
             throw new Error(`API error: ${response.status} - ${errorData}`);
         }
 
-        const data = await response.json() as ClaudeResponse;
-        return data.content[0].text;
+        const data = await response.json() as ClaudeMessage;
+        
+        // Extract just the text content from Claude's response
+        if (data.content && data.content.length > 0) {
+            const textContent = data.content.find(c => c.type === 'text');
+            if (textContent) {
+                return textContent.text;
+            }
+        }
+        
+        throw new Error('No text content found in response');
     } catch (error) {
         if (error instanceof Error) {
-            throw new Error(`Failed to call Claude API: ${error.message}`);
+            window.showErrorMessage(`Failed to call Claude: ${error.message}`);
+            throw error;
         } else {
-            throw new Error('Failed to call Claude API: Unknown error');
+            window.showErrorMessage('Failed to call Claude: Unknown error');
+            throw new Error('Unknown error occurred');
         }
     }
 }
