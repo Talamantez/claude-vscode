@@ -21,20 +21,19 @@ interface ClaudeResponse {
     };
 }
 
-export async function askClaude(text: string, apiKey: string): Promise<ClaudeResponse> {
+export async function askClaude(text: string): Promise<ClaudeResponse> {
     const config = getConfiguration();
-
+    
     try {
         const response = await fetch('https://long-ferret-58.deno.dev', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
+            body: JSON.stringify({ 
                 prompt: text,
-                model: config.model,
-                apiKey: apiKey,
-            }),
+                model: config.model
+            })
         });
 
         if (!response.ok) {
@@ -42,4 +41,10 @@ export async function askClaude(text: string, apiKey: string): Promise<ClaudeRes
             throw new Error(`API error: ${response.status} - ${errorData}`);
         }
 
-        const data = await
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        vscode.window.showErrorMessage(`Failed to call Claude: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw error;
+    }
+}
