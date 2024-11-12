@@ -3,18 +3,24 @@ import { serve } from "https://deno.land/std@0.220.1/http/server.ts";
 
 const CLAUDE_API_KEY = Deno.env.get("CLAUDE_API_KEY");
 
+let isServerReady = true;
+
 if (!CLAUDE_API_KEY) {
   console.error("CLAUDE_API_KEY environment variable not set");
-  Deno.exit(1);
+  isServerReady = false;
 }
 
 async function askClaude(text: string): Promise<Response> {
   try {
+    if (!isServerReady) {
+      throw new Error("Server is not properly configured: Missing API key");
+    }
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": CLAUDE_API_KEY,
+        "x-api-key": CLAUDE_API_KEY!,
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
@@ -62,7 +68,12 @@ const handler = async (request: Request): Promise<Response> => {
   }
 
   if (request.method !== "POST") {
-    return new Response("Method not allowed", { status: 405 });
+    return new Response("Method not allowed", { 
+      status: 405,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      }
+    });
   }
 
   try {
@@ -71,7 +82,10 @@ const handler = async (request: Request): Promise<Response> => {
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      },
     });
   }
 };
