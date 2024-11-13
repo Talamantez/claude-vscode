@@ -33,28 +33,46 @@
     "commands": [
       {
         "command": "claude-vscode.askClaude",
-        "title": "Ask Claude"
+        "title": "Ask Claude",
+        "icon": "$(comment-discussion)"
       },
       {
         "command": "claude-vscode.documentCode",
-        "title": "Document Code with Claude"
+        "title": "Document Code with Claude",
+        "icon": "$(book)"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "claude.menu",
+          "group": "navigation"
+        }
+      ],
+      "claude.menu": [
+        {
+          "command": "claude-vscode.askClaude",
+          "group": "claude@1"
+        },
+        {
+          "command": "claude-vscode.documentCode",
+          "group": "claude@2"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "claude.menu",
+        "label": "Claude AI"
       }
     ],
     "configuration": {
-      "title": "Claude VSCode",
+      "title": "Claude VS Code",
       "properties": {
         "claude-vscode.model": {
           "type": "string",
           "default": "claude-3-opus-20240229",
-          "description": "The Claude model to use for requests",
-          "enum": [
-            "claude-3-opus-20240229",
-            "claude-3-sonnet-20240229"
-          ],
-          "enumDescriptions": [
-            "Most powerful model, best for complex tasks",
-            "Faster model, good for shorter responses"
-          ]
+          "description": "Claude model to use for requests"
         }
       }
     }

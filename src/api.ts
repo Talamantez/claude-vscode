@@ -1,6 +1,6 @@
 // src/api.ts
 import * as vscode from 'vscode';
-import { getConfiguration } from './config.ts';
+import { getConfiguration } from './config';
 
 interface ClaudeMessageContent {
     type: string;
@@ -21,11 +21,13 @@ interface ClaudeResponse {
     };
 }
 
+const SERVICE_URL = 'https://long-ferret-58.deno.dev';
+
 export async function askClaude(text: string): Promise<ClaudeResponse> {
     const config = getConfiguration();
     
     try {
-        const response = await fetch('https://long-ferret-58.deno.dev', {
+        const response = await fetch(SERVICE_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

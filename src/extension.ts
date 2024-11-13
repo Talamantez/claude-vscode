@@ -1,12 +1,16 @@
 ﻿// src/extension.ts
 import * as vscode from 'vscode';
-import { askClaude } from './api';
+import { askClaude } from './api.ts';
 
 // Helper function to extract content from Claude response
-function extractContent(response: any): string {
+interface ClaudeResponse {
+  content: { text: string }[];
+}
+
+function extractContent(response: ClaudeResponse): string {
   if (!response || !response.content) return 'No response content';
   return response.content
-    .map((item: any) => item.text || '')
+    .map((item: { text: string }) => item.text || '')
     .join('\n');
 }
 
@@ -82,10 +86,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  let askCommand = vscode.commands.registerCommand('claude-vscode.askClaude', () => 
+  const askCommand = vscode.commands.registerCommand('claude-vscode.askClaude', () => 
     handleClaudeRequest('general'));
   
-  let documentCommand = vscode.commands.registerCommand('claude-vscode.documentCode', () => 
+  const documentCommand = vscode.commands.registerCommand('claude-vscode.documentCode', () => 
     handleClaudeRequest('document'));
 
   context.subscriptions.push(askCommand, documentCommand);
