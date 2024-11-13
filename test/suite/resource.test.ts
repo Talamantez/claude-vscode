@@ -1,6 +1,7 @@
 // test/suite/resource.test.ts
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import * as extension from '../../src/extension';
 
 suite('Resource Management Test Suite', () => {
     test('Multiple Panel Creation and Cleanup', async function() {
@@ -8,7 +9,7 @@ suite('Resource Management Test Suite', () => {
         console.log('Starting Multiple Panel test...');
 
         const panelCount = 5;
-        const panels = [];
+        const panels: vscode.TextEditor[] = [];  // Properly typed array
 
         try {
             // Create multiple panels
@@ -75,39 +76,49 @@ suite('Resource Management Test Suite', () => {
         }
     });
 
-    test('Extension Deactivation Cleanup', async function() {
+    test('Manual Deactivation Cleanup', async function() {
         this.timeout(30000);
-        console.log('Starting Deactivation test...');
+        console.log('Starting Manual Deactivation test...');
 
         try {
-            // Create some panels
-            const doc1 = await vscode.workspace.openTextDocument({
-                content: 'Test content 1',
-                language: 'markdown'
-            });
-            await vscode.window.showTextDocument(doc1);
+            // Create some test documents
+            const docs = await Promise.all([
+                vscode.workspace.openTextDocument({
+                    content: 'Test content 1',
+                    language: 'markdown'
+                }),
+                vscode.workspace.openTextDocument({
+                    content: 'Test content 2',
+                    language: 'markdown'
+                })
+            ]);
 
-            const doc2 = await vscode.workspace.openTextDocument({
-                content: 'Test content 2',
-                language: 'markdown'
-            });
-            await vscode.window.showTextDocument(doc2, vscode.ViewColumn.Beside);
-
-            // Close all editors first
-            await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Force deactivation
-            const ext = vscode.extensions.getExtension('conscious-robot.claude-vscode-assistant');
-            if (ext && ext.isActive) {
-                await vscode.commands.executeCommand('workbench.action.reloadWindow');
+            // Show documents
+            const editors: vscode.TextEditor[] = [];  // Properly typed array
+            for (const doc of docs) {
+                const editor = await vscode.window.showTextDocument(doc, { 
+                    viewColumn: vscode.ViewColumn.Beside 
+                });
+                editors.push(editor);
             }
 
-            // Wait for deactivation and cleanup
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            // Verify editors are open
+            assert.ok(
+                vscode.window.visibleTextEditors.length > 0,
+                'Should have open editors'
+            );
+
+            console.log('Calling deactivate function...');
+            // Call deactivate function directly
+            await extension.deactivate();
+
+            // Wait for cleanup
+            await new Promise(resolve => setTimeout(resolve, 2000));
 
             // Close any remaining editors
             await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+            
+            // Final wait for cleanup
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Verify cleanup
@@ -117,12 +128,10 @@ suite('Resource Management Test Suite', () => {
                 'All editors should be cleaned up after deactivation'
             );
 
+            console.log('Deactivation test completed successfully');
         } catch (error) {
-            console.error('Test failed:', error);
+            console.error('Deactivation test failed:', error);
             throw error;
-        } finally {
-            // One final attempt to clean up
-            await vscode.commands.executeCommand('workbench.action.closeAllEditors');
         }
     });
 });

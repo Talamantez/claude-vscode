@@ -1,59 +1,74 @@
 ﻿// src/extension.ts
 import * as vscode from 'vscode';
-import { askClaude, ClaudeResponse } from './api';
+import { ClaudeApiService, DefaultClaudeApiService } from './services/claude-api';
+import { ClaudeResponse } from './api';
 
-// Panel tracking
+// Global state management
+let registeredCommands: vscode.Disposable[] = [];
 const activePanels = new Set<vscode.Disposable>();
-
-// Watchdog timer
+let apiService: ClaudeApiService;
 let watchdogTimer: NodeJS.Timeout | undefined;
+let isDeactivating = false;
 
-function startWatchdog() {
-    stopWatchdog(); // Clear any existing timer
-    watchdogTimer = setInterval(() => {
-        // Check panel health and force dispose if needed
-        activePanels.forEach(panel => {
-            try {
-                if (panel instanceof vscode.Disposable) {
-                    panel.dispose();
+// Constants
+const WATCHDOG_INTERVAL = 30000; // 30 seconds
+const CLEANUP_TIMEOUT = 1000; // 1 second
+const STATUS_BAR_PRIORITY = 100;
+
+/**
+ * Manages watchdog timer for panel cleanup
+ */
+class WatchdogManager {
+    private static timer: NodeJS.Timeout | undefined;
+
+    static start() {
+        this.stop();
+        this.timer = setInterval(() => {
+            if (isDeactivating) return;
+            
+            activePanels.forEach(panel => {
+                try {
+                    if (panel instanceof vscode.Disposable) {
+                        panel.dispose();
+                    }
+                } catch (error) {
+                    console.error('Watchdog: Error disposing panel:', error);
                 }
-            } catch (error) {
-                console.error('Error disposing panel:', error);
-            }
-            activePanels.delete(panel);
-        });
-    }, 30000); // Check every 30 seconds
-}
+                activePanels.delete(panel);
+            });
+        }, WATCHDOG_INTERVAL);
+    }
 
-function stopWatchdog() {
-    if (watchdogTimer) {
-        clearInterval(watchdogTimer);
-        watchdogTimer = undefined;
+    static stop() {
+        if (this.timer) {
+            clearInterval(this.timer);
+            this.timer = undefined;
+        }
     }
 }
 
-// Helper function to extract content from Claude response
-function extractContent(response: ClaudeResponse): string {
-    if (!response?.content) return 'No response content';
-    return response.content
-        .map(item => item.text || '')
-        .join('\n');
-}
-
-// Format the response
-function formatResponse(prompt: string, response: ClaudeResponse, mode: 'general' | 'document' = 'general'): string {
+/**
+ * Formats the response from Claude into a markdown document
+ */
+function formatResponse(prompt: string, response: ClaudeResponse, mode: 'general' | 'document'): string {
     const now = new Date().toLocaleString();
-    
+    const title = mode === 'document' ? 'Code Documentation' : 'Claude Response';
+    const promptTitle = mode === 'document' ? 'Original Code' : 'Your Prompt';
+
+    const content = response.content
+        ?.map(item => item.text || '')
+        .join('\n') || 'No response content';
+
     return [
-        `# ${mode === 'document' ? 'Code Documentation' : 'Claude Response'} (${now})`,
+        `# ${title} (${now})`,
         '',
-        mode === 'document' ? '## Original Code' : '## Your Prompt',
+        `## ${promptTitle}`,
         '```',
         prompt,
         '```',
         '',
         '## Response',
-        extractContent(response),
+        content,
         '',
         '---',
         `*Using ${response.model}*`,
@@ -61,13 +76,49 @@ function formatResponse(prompt: string, response: ClaudeResponse, mode: 'general
     ].join('\n');
 }
 
+/**
+ * Creates and manages a response panel
+ */
+async function createResponsePanel(content: string): Promise<vscode.TextEditor | undefined> {
+    try {
+        const doc = await vscode.workspace.openTextDocument({
+            content,
+            language: 'markdown'
+        });
+
+        const editor = await vscode.window.showTextDocument(doc, {
+            preview: true,
+            viewColumn: vscode.ViewColumn.Beside
+        });
+
+        if (editor) {
+            const disposable = new vscode.Disposable(() => {
+                try {
+                    vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+                } catch (error) {
+                    console.error('Error closing panel:', error);
+                }
+            });
+            activePanels.add(disposable);
+        }
+
+        return editor;
+    } catch (error) {
+        console.error('Error creating response panel:', error);
+        throw error;
+    }
+}
+
+/**
+ * Handles Claude API requests
+ */
 async function handleClaudeRequest(mode: 'general' | 'document') {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
         vscode.window.showInformationMessage('No active editor!');
         return;
     }
-    
+
     const selection = editor.selection;
     const text = editor.document.getText(selection);
     if (!text) {
@@ -75,7 +126,10 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
         return;
     }
 
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    const statusBarItem = vscode.window.createStatusBarItem(
+        vscode.StatusBarAlignment.Right,
+        STATUS_BAR_PRIORITY
+    );
     statusBarItem.text = "$(sync~spin) Asking Claude...";
     statusBarItem.show();
 
@@ -89,62 +143,30 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
             title: mode === 'document' ? 'Generating Documentation...' : 'Asking Claude...',
             cancellable: false
         }, async () => {
-            return await askClaude(prompt);
+            return await apiService.askClaude(prompt);
         });
 
         const formattedResponse = formatResponse(text, response, mode);
-        const doc = await vscode.workspace.openTextDocument({
-            content: formattedResponse,
-            language: 'markdown'
-        });
-        
-        const editor = await vscode.window.showTextDocument(doc, { 
-            preview: true,
-            viewColumn: vscode.ViewColumn.Beside 
-        });
-
-        // Track the panel
-        if (editor) {
-            const disposable = new vscode.Disposable(() => {
-                try {
-                    vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                } catch (error) {
-                    console.error('Error closing panel:', error);
-                }
-            });
-            activePanels.add(disposable);
-        }
-
+        await createResponsePanel(formattedResponse);
     } catch (error) {
-        vscode.window.showErrorMessage(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        vscode.window.showErrorMessage(`Error: ${errorMessage}`);
+        console.error('Error handling Claude request:', error);
     } finally {
         statusBarItem.dispose();
     }
 }
 
-export function activate(context: vscode.ExtensionContext) {
-    console.log('Claude extension activating...');
+/**
+ * Cleans up all panels and editors
+ */
+async function cleanupPanelsAndEditors(): Promise<void> {
+    try {
+        // Close all editors first
+        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+        await new Promise(resolve => setTimeout(resolve, CLEANUP_TIMEOUT));
 
-    // Start watchdog
-    startWatchdog();
-    context.subscriptions.push(new vscode.Disposable(stopWatchdog));
-
-    // Create and track status bar item
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    context.subscriptions.push(statusBarItem);
-
-    // Register commands
-    const askCommand = vscode.commands.registerCommand('claude-vscode.askClaude', () => 
-        handleClaudeRequest('general'));
-    
-    const documentCommand = vscode.commands.registerCommand('claude-vscode.documentCode', () => 
-        handleClaudeRequest('document'));
-
-    // Add to subscriptions for proper disposal
-    context.subscriptions.push(askCommand, documentCommand);
-
-    // Add panel cleanup subscription
-    context.subscriptions.push(new vscode.Disposable(() => {
+        // Dispose all tracked panels
         activePanels.forEach(panel => {
             try {
                 panel.dispose();
@@ -153,33 +175,8 @@ export function activate(context: vscode.ExtensionContext) {
             }
         });
         activePanels.clear();
-    }));
 
-    console.log('Claude extension activated');
-}
-
-export async function deactivate() {
-    console.log('Claude extension deactivating...');
-
-    // Stop watchdog
-    stopWatchdog();
-
-    try {
-        // Close all editors first
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Clean up panels
-        activePanels.forEach(panel => {
-            try {
-                panel.dispose();
-            } catch (error) {
-                console.error('Error disposing panel during deactivation:', error);
-            }
-        });
-        activePanels.clear();
-
-        // Final cleanup of any remaining editors/panels
+        // Clean up any remaining tabs
         vscode.window.tabGroups.all.forEach(group => {
             group.tabs.forEach(tab => {
                 try {
@@ -188,16 +185,95 @@ export async function deactivate() {
                         (input as { dispose: () => void }).dispose();
                     }
                 } catch (error) {
-                    console.error('Error disposing tab during deactivation:', error);
+                    console.error('Error disposing tab:', error);
                 }
             });
         });
 
-        // One more attempt to close everything
+        // Final cleanup attempt
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
     } catch (error) {
-        console.error('Error during deactivation:', error);
+        console.error('Error during cleanup:', error);
+        throw error;
     }
+}
 
-    console.log('Claude extension deactivated');
+/**
+ * Activates the extension
+ */
+export async function activate(context: vscode.ExtensionContext, service?: ClaudeApiService) {
+    console.log('Claude extension activating...');
+    
+    try {
+        // Clean up any existing state
+        registeredCommands.forEach(cmd => cmd.dispose());
+        registeredCommands = [];
+        
+        // Initialize services
+        apiService = service || new DefaultClaudeApiService();
+        WatchdogManager.start();
+
+        // Register cleanup on deactivation
+        context.subscriptions.push(new vscode.Disposable(WatchdogManager.stop));
+
+        // Register commands
+        const commands = [
+            vscode.commands.registerCommand(
+                'claude-vscode.askClaude',
+                () => handleClaudeRequest('general')
+            ),
+            vscode.commands.registerCommand(
+                'claude-vscode.documentCode',
+                () => handleClaudeRequest('document')
+            )
+        ];
+
+        // Track commands
+        registeredCommands.push(...commands);
+        context.subscriptions.push(...commands);
+
+        // Register panel cleanup
+        context.subscriptions.push(new vscode.Disposable(() => {
+            activePanels.forEach(panel => {
+                try {
+                    panel.dispose();
+                } catch (error) {
+                    console.error('Error disposing panel:', error);
+                }
+            });
+            activePanels.clear();
+        }));
+
+        console.log('Claude extension activated');
+    } catch (error) {
+        console.error('Error during activation:', error);
+        throw error;
+    }
+}
+
+/**
+ * Deactivates the extension
+ */
+export async function deactivate() {
+    console.log('Claude extension deactivating...');
+    isDeactivating = true;
+
+    try {
+        // Stop watchdog first
+        WatchdogManager.stop();
+
+        // Dispose commands
+        registeredCommands.forEach(cmd => cmd.dispose());
+        registeredCommands = [];
+
+        // Clean up panels and editors
+        await cleanupPanelsAndEditors();
+
+        console.log('Claude extension deactivated');
+    } catch (error) {
+        console.error('Error during deactivation:', error);
+        throw error;
+    } finally {
+        isDeactivating = false;
+    }
 }
