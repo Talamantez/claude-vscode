@@ -74,6 +74,11 @@
           "type": "string",
           "default": "claude-3-opus-20240229",
           "description": "Claude model to use for requests"
+        },
+        "claude-vscode.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your Claude API Key"
         }
       }
     }
