@@ -79,16 +79,31 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run build",
-    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "build": "tsc -p ./tsconfig.json && esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
     "watch": "node esbuild.js --watch",
     "package": "vsce package",
-    "publish": "vsce publish"
+    "publish": "vsce publish",
+    "pretest": "pnpm run build && pnpm run compile-tests",
+    "test": "node --force-node-api-uncaught-exceptions-policy=true ./out/test/runTest.js",
+    "compile-tests": "tsc -p ./tsconfig.test.json",
+    "watch-tests": "tsc -p ./tsconfig.test.json --watch"
   },
   "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.9",
     "@types/node": "^20.0.0",
-    "@types/vscode": "^1.80.0",
+    "@types/sinon": "^17.0.3",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^6.18.0",
+    "@typescript-eslint/parser": "^6.18.0",
+    "@vscode/test-electron": "^2.3.9",
+    "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.19.0",
-    "typescript": "^5.0.0",
-    "@vscode/vsce": "^2.24.0"
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.8.2",
+    "sinon": "^19.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
   }
 }

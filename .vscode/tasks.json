@@ -1,15 +1,28 @@
-// .vscode/tasks.json
 {
     "version": "2.0.0",
     "tasks": [
         {
             "type": "npm",
             "script": "watch",
-            "problemMatcher": "$esbuild-watch",
+            "problemMatcher": "$tsc-watch",
             "isBackground": true,
             "presentation": {
                 "reveal": "never"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
             }
+        },
+        {
+            "type": "npm",
+            "script": "compile-tests",
+            "group": "build",
+            "presentation": {
+                "reveal": "never",
+                "panel": "dedicated"
+            },
+            "problemMatcher": "$tsc"
         }
     ]
 }
