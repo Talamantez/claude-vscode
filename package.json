@@ -25,8 +25,7 @@
   ],
   "activationEvents": [
     "onCommand:claude-vscode.askClaude",
-    "onCommand:claude-vscode.documentCode",
-    "*"
+    "onCommand:claude-vscode.documentCode"
   ],
   "main": "./dist/extension.js",
   "icon": "logo.png",
