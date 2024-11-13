@@ -3,6 +3,25 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2024-11-13
+### Added
+- Secure API key management 🔐
+- Environment variable support for API key
+- Enhanced security documentation
+- VS Code secure storage integration
+
+### Changed
+- Updated authentication flow to use API keys
+- Improved error handling for authentication issues
+- Enhanced README with security best practices
+- Optimized marketplace documentation formatting
+
+### Security
+- Implemented secure API key storage
+- Added authentication validation
+- Enhanced privacy measures
+- Added comprehensive security documentation
+
 ## [1.0.0] - 2024-03-12
 ### Official Stable Release! 🎉
 - Everything you need, nothing you don't
@@ -46,5 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Side-by-side response view
 - Basic configuration options
 
+[1.1.0]: https://github.com/conscious-robot/claude-vscode/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/conscious-robot/claude-vscode/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/conscious-robot/claude-vscode/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/conscious-robot/claude-vscode/releases/tag/v0.1.0
