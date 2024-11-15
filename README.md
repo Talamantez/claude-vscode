@@ -2,11 +2,10 @@
 
 Bring the power of Claude directly into your development workflow. This extension allows you to interact with Claude AI without leaving VS Code, helping you write, document, and understand code more effectively.
 
-[Watch Demo Video](https://www.awesomescreenshot.com/video/33547525?key=8c3b97293ba780ded6ba9d19f9423f35)
+[Basic usage: just select text and right click!](https://www.awesomescreenshot.com/video/33547525?key=8c3b97293ba780ded6ba9d19f9423f35)
 https://www.awesomescreenshot.com/video/33636474
 
-[The Case of the Missing Emoji: See how I use Recursive Prompting and Window Management to squash a bug and gain an emoji!
-[Watch Demo Video](https://www.awesomescreenshot.com/video/33636474?key=8c3b97293ba780ded6ba9d19f9423f35)
+[The Case of the Missing Emoji: See how I use Recursive Prompting and Window Management to squash a bug and gain an emoji!] (https://www.awesomescreenshot.com/video/33636474?key=8c3b97293ba780ded6ba9d19f9423f35)
 
 ## Key Features
 
