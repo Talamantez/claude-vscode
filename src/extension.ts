@@ -216,6 +216,12 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
         // Register cleanup on deactivation
         context.subscriptions.push(new vscode.Disposable(WatchdogManager.stop));
 
+        context.subscriptions.push(
+            vscode.commands.registerCommand('claude-vscode.support', () => {
+                vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
+            })
+        );
+        
         // Register commands
         const commands = [
             vscode.commands.registerCommand(
