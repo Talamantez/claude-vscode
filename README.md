@@ -4,8 +4,6 @@ Bring the power of Claude directly into your development workflow. This extensio
 
 [Basic usage](https://www.awesomescreenshot.com/video/33547525?key=8c3b97293ba780ded6ba9d19f9423f35)
 
-[The Case of the Missing Emoji](https://www.awesomescreenshot.com/video/33636474?key=8c3b97293ba780ded6ba9d19f9423f35)
-
 ## Key Features
 
 * Ask Claude: Select any text and get instant AI assistance
