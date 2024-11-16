@@ -7,9 +7,8 @@ Bring the power of Claude directly into your development workflow. This extensio
 ## Key Features
 
 * Ask Claude: Select any text and get instant AI assistance
-*   TIP! Maximize context by including text from previous responses
 * Document Code: Automatically generate documentation for your code
-* Context-Aware: Claude understands your code and provides relevant responses
+* Context-Aware: Include context by including text from previous responses.
 * Markdown Output: Responses are formatted in clean, readable Markdown
 
 ## Quick Start
