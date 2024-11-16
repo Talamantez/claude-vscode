@@ -40,6 +40,11 @@
         "command": "claude-vscode.documentCode",
         "title": "Document Code with Claude",
         "icon": "$(book)"
+      },
+      {
+        "command": "claude-vscode.support",
+        "title": "Support Open Source",
+        "category": "Claude AI"
       }
     ],
     "menus": {
@@ -57,6 +62,10 @@
         {
           "command": "claude-vscode.documentCode",
           "group": "claude@2"
+        },
+        {
+          "command": "claude-vscode.support",
+          "group": "Claude AI"
         }
       ]
     },
