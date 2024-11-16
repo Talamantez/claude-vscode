@@ -3,7 +3,8 @@
 Bring the power of Claude directly into your development workflow. This extension allows you to interact with Claude AI without leaving VS Code, helping you write, document, and understand code more effectively.
 
 [Basic usage video](https://www.awesomescreenshot.com/video/33547525?key=8c3b97293ba780ded6ba9d19f9423f35)
-[Include text from previous AI responses to provide context to subsequent queries - and solve a mystery!] https://www.awesomescreenshot.com/video/33636474?key=d16f8b7ef6b546ae58390f5defccb571
+
+[Tip! Include text from previous AI responses (video)](https://www.awesomescreenshot.com/video/33636474?key=d16f8b7ef6b546ae58390f5defccb571)
 
 ## Key Features
 
