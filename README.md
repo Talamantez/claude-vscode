@@ -1,4 +1,4 @@
-﻿# Claude VS Code Assistant
+﻿# Right Click? Claude!
 
 Bring the power of Claude directly into your development workflow. This extension allows you to interact with Claude AI without leaving VS Code, helping you write, document, and understand code more effectively.
 
