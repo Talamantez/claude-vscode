@@ -17,7 +17,7 @@ Bring the power of Claude directly into your development workflow. This extensio
 
 1. Install the extension
 2. Set up your Claude API key (see below)
-3. Select text and use:
+3. Select text, right click, select Claude AI then select:
    * `Ask Claude` for general assistance
    * `Document Code` for automatic documentation
 
