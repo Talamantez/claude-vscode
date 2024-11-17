@@ -2,8 +2,13 @@
 import * as vscode from 'vscode';
 import { getConfiguration } from './config';
 
+// Constants
+const SERVICE_URL = 'https://long-ferret-58.deno.dev';
+const VALID_MODELS = ['claude-3-opus-20240229', 'claude-3-sonnet-20240229'] as const;
+type ValidModel = typeof VALID_MODELS[number];
+
 export interface ClaudeMessageContent {
-    type: string;
+    type: 'text';  // Restrict to known types
     text: string;
 }
 
@@ -11,7 +16,7 @@ export interface ClaudeResponse {
     id: string;
     type: string;
     role: string;
-    model: string;
+    model: ValidModel;
     content: ClaudeMessageContent[];
     stop_reason: string | null;
     stop_sequence: string | null;
@@ -23,16 +28,85 @@ export interface ClaudeResponse {
     dailyLimit?: number;
 }
 
-const SERVICE_URL = 'https://long-ferret-58.deno.dev';
+// Enhanced type guard with complete validation
+function isClaudeMessageContent(item: unknown): item is ClaudeMessageContent {
+    return (
+        typeof item === 'object' &&
+        item !== null &&
+        'type' in item &&
+        'text' in item &&
+        (item as ClaudeMessageContent).type === 'text' &&
+        typeof (item as ClaudeMessageContent).text === 'string'
+    );
+}
+
+function isClaudeResponse(data: unknown): data is ClaudeResponse {
+    const response = data as Partial<ClaudeResponse>;
+    
+    // Basic structure check
+    if (typeof data !== 'object' || data === null) {
+        return false;
+    }
+
+    // Required fields check
+    const requiredStringFields = ['id', 'type', 'role'] as const;
+    for (const field of requiredStringFields) {
+        if (typeof response[field] !== 'string') {
+            return false;
+        }
+    }
+
+    // Content array check
+    if (!Array.isArray(response.content)) {
+        return false;
+    }
+
+    // Validate each content item
+    if (!response.content.every(isClaudeMessageContent)) {
+        return false;
+    }
+
+    // Usage object check
+    if (
+        typeof response.usage !== 'object' ||
+        response.usage === null ||
+        typeof response.usage.input_tokens !== 'number' ||
+        typeof response.usage.output_tokens !== 'number'
+    ) {
+        return false;
+    }
+
+    // Optional fields check
+    if (
+        (response.stop_reason !== null && typeof response.stop_reason !== 'string') ||
+        (response.stop_sequence !== null && typeof response.stop_sequence !== 'string') ||
+        (response.remaining !== undefined && typeof response.remaining !== 'number') ||
+        (response.dailyLimit !== undefined && typeof response.dailyLimit !== 'number')
+    ) {
+        return false;
+    }
+
+    // Validate model string matches expected format
+    if (!response.model || !VALID_MODELS.includes(response.model as ValidModel)) {
+        return false;
+    }
+
+    return true;
+}
 
 export async function askClaude(text: string): Promise<ClaudeResponse> {
     const config = getConfiguration();
+    
+    if (!config.apiKey && !process.env.CLAUDE_API_KEY) {
+        throw new Error('No API key configured. Please add your Claude API key in settings.');
+    }
     
     try {
         const response = await fetch(SERVICE_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
             },
             body: JSON.stringify({ 
                 prompt: text,
@@ -47,37 +121,15 @@ export async function askClaude(text: string): Promise<ClaudeResponse> {
 
         const data: unknown = await response.json();
         
-        // Type guard to verify the response matches our expected structure
         if (!isClaudeResponse(data)) {
+            console.error('Invalid response structure:', data);
             throw new Error('Invalid response format from Claude API');
         }
         
-        return data as ClaudeResponse;
+        return data;
     } catch (error) {
-        vscode.window.showErrorMessage(`Failed to call Claude: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        vscode.window.showErrorMessage(`Failed to call Claude: ${errorMessage}`);
         throw error;
     }
-}
-
-// Type guard function
-function isClaudeResponse(data: unknown): data is ClaudeResponse {
-    const response = data as Partial<ClaudeResponse>;
-    return (
-        typeof data === 'object' &&
-        data !== null &&
-        Array.isArray(response.content) &&
-        response.content?.every((item: unknown) => 
-            typeof item === 'object' &&
-            item !== null &&
-            'type' in item &&
-            'text' in item &&
-            typeof (item as ClaudeMessageContent).type === 'string' &&
-            typeof (item as ClaudeMessageContent).text === 'string'
-        ) &&
-        typeof response.model === 'string' &&
-        typeof response.usage === 'object' &&
-        response.usage !== null &&
-        typeof response.usage.input_tokens === 'number' &&
-        typeof response.usage.output_tokens === 'number'
-    );
 }

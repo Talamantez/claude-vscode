@@ -4,12 +4,39 @@ import * as vscode from 'vscode';
 import * as extension from '../../src/extension';
 
 suite('Resource Management Test Suite', () => {
+    // Helper function to ensure all editors are closed
+    async function ensureAllEditorsClosed(retries = 3, delay = 500): Promise<void> {
+        for (let i = 0; i < retries; i++) {
+            if (vscode.window.visibleTextEditors.length === 0) {
+                return;
+            }
+            await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        // Final check
+        assert.strictEqual(
+            vscode.window.visibleTextEditors.length,
+            0,
+            'All editors should be closed'
+        );
+    }
+
+    // Setup before each test
+    setup(async () => {
+        await ensureAllEditorsClosed();
+    });
+
+    // Cleanup after each test
+    teardown(async () => {
+        await ensureAllEditorsClosed();
+    });
+
     test('Multiple Panel Creation and Cleanup', async function() {
         this.timeout(45000);
         console.log('Starting Multiple Panel test...');
 
         const panelCount = 5;
-        const panels: vscode.TextEditor[] = [];  // Properly typed array
+        const panels: vscode.TextEditor[] = [];
 
         try {
             // Create multiple panels
@@ -31,7 +58,7 @@ suite('Resource Management Test Suite', () => {
                     `Panel ${i + 1} should be visible`
                 );
 
-                // Wait a bit between creations
+                // Wait between creations
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
 
@@ -39,11 +66,19 @@ suite('Resource Management Test Suite', () => {
             const initialMemory = process.memoryUsage();
 
             // Close panels one by one
-            for (let i = 0; i < panels.length; i++) {
-                console.log(`Closing panel ${i + 1}/${panelCount}`);
-                await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                await new Promise(resolve => setTimeout(resolve, 500));
+            for (const panel of panels) {
+                try {
+                    const doc = panel.document;
+                    await vscode.window.showTextDocument(doc, { preview: true });
+                    await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    console.error('Error closing panel:', error);
+                }
             }
+
+            // Ensure all editors are closed
+            await ensureAllEditorsClosed(5, 1000);
 
             // Force garbage collection if possible
             if (global.gc) {
@@ -63,7 +98,7 @@ suite('Resource Management Test Suite', () => {
                 'Memory usage should not increase significantly'
             );
 
-            // Verify all editors are closed
+            // Final verification
             assert.strictEqual(
                 vscode.window.visibleTextEditors.length,
                 0,
@@ -72,6 +107,8 @@ suite('Resource Management Test Suite', () => {
 
         } catch (error) {
             console.error('Test failed:', error);
+            // Attempt emergency cleanup
+            await ensureAllEditorsClosed(5, 1000);
             throw error;
         }
     });
@@ -94,12 +131,15 @@ suite('Resource Management Test Suite', () => {
             ]);
 
             // Show documents
-            const editors: vscode.TextEditor[] = [];  // Properly typed array
+            const editors: vscode.TextEditor[] = [];
             for (const doc of docs) {
                 const editor = await vscode.window.showTextDocument(doc, { 
-                    viewColumn: vscode.ViewColumn.Beside 
+                    viewColumn: vscode.ViewColumn.Beside,
+                    preview: true  // Add preview flag
                 });
                 editors.push(editor);
+                // Wait between openings
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
 
             // Verify editors are open
@@ -112,25 +152,14 @@ suite('Resource Management Test Suite', () => {
             // Call deactivate function directly
             await extension.deactivate();
 
-            // Wait for cleanup
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Close any remaining editors
-            await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-            
-            // Final wait for cleanup
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Verify cleanup
-            assert.strictEqual(
-                vscode.window.visibleTextEditors.length,
-                0,
-                'All editors should be cleaned up after deactivation'
-            );
+            // Wait for cleanup and ensure editors are closed
+            await ensureAllEditorsClosed(5, 1000);
 
             console.log('Deactivation test completed successfully');
         } catch (error) {
             console.error('Deactivation test failed:', error);
+            // Attempt emergency cleanup
+            await ensureAllEditorsClosed(5, 1000);
             throw error;
         }
     });

@@ -162,11 +162,9 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
  */
 async function cleanupPanelsAndEditors(): Promise<void> {
     try {
-        // Close all editors first
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
         await new Promise(resolve => setTimeout(resolve, CLEANUP_TIMEOUT));
 
-        // Dispose all tracked panels
         activePanels.forEach(panel => {
             try {
                 panel.dispose();
@@ -176,7 +174,6 @@ async function cleanupPanelsAndEditors(): Promise<void> {
         });
         activePanels.clear();
 
-        // Clean up any remaining tabs
         vscode.window.tabGroups.all.forEach(group => {
             group.tabs.forEach(tab => {
                 try {
@@ -190,7 +187,6 @@ async function cleanupPanelsAndEditors(): Promise<void> {
             });
         });
 
-        // Final cleanup attempt
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
     } catch (error) {
         console.error('Error during cleanup:', error);
@@ -205,24 +201,21 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
     console.log('Claude extension activating...');
     
     try {
-        // Clean up any existing state
         registeredCommands.forEach(cmd => cmd.dispose());
         registeredCommands = [];
         
-        // Initialize services
         apiService = service || new DefaultClaudeApiService();
         WatchdogManager.start();
 
-        // Register cleanup on deactivation
         context.subscriptions.push(new vscode.Disposable(WatchdogManager.stop));
 
+        // Support command for donations
         context.subscriptions.push(
             vscode.commands.registerCommand('claude-vscode.support', () => {
                 vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
             })
         );
         
-        // Register commands
         const commands = [
             vscode.commands.registerCommand(
                 'claude-vscode.askClaude',
@@ -234,11 +227,9 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
             )
         ];
 
-        // Track commands
         registeredCommands.push(...commands);
         context.subscriptions.push(...commands);
 
-        // Register panel cleanup
         context.subscriptions.push(new vscode.Disposable(() => {
             activePanels.forEach(panel => {
                 try {
@@ -265,14 +256,11 @@ export async function deactivate() {
     isDeactivating = true;
 
     try {
-        // Stop watchdog first
         WatchdogManager.stop();
-
-        // Dispose commands
+        
         registeredCommands.forEach(cmd => cmd.dispose());
         registeredCommands = [];
 
-        // Clean up panels and editors
         await cleanupPanelsAndEditors();
 
         console.log('Claude extension deactivated');
