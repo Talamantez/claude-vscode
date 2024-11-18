@@ -1,8 +1,6 @@
 By [Conscious Robot](https://conscious-robot.com)
- 
+Inspired by [Baratunde "We go faster when we go together" Thurston](https://podcasts.apple.com/us/podcast/life-with-machines/id1766829040)
  # Right Click? Claude!
-
-"We go faster when we go together!" [Baratunde Thurston](https://podcasts.apple.com/us/podcast/life-with-machines/id1766829040)
 
 Bring the power of Claude directly into your development workflow. This extension allows you to interact with Claude AI without leaving VS Code, helping you write, document, and understand code more effectively.
 
