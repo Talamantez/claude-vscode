@@ -5,7 +5,6 @@ import { ClaudeResponse } from './api';
 
 // Global state management
 let registeredCommands: vscode.Disposable[] = [];
-const activePanels = new Set<vscode.Disposable>();
 let apiService: ClaudeApiService;
 
 // Constants
@@ -56,21 +55,10 @@ export async function createResponsePanel(content: string): Promise<vscode.TextE
             viewColumn: vscode.ViewColumn.Beside
         });
 
-        // Safely handle readonly toggle
-        const commands = await vscode.commands.getCommands(true);
+        // Safely toggle readonly
+        const commands = await vscode.commands.getCommands();
         if (commands.includes('workbench.action.toggleEditorReadonly')) {
             await vscode.commands.executeCommand('workbench.action.toggleEditorReadonly');
-        }
-
-        if (editor) {
-            const disposable = new vscode.Disposable(() => {
-                try {
-                    vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-                } catch (error) {
-                    console.error('Error closing panel:', error);
-                }
-            });
-            activePanels.add(disposable);
         }
 
         return editor;
@@ -136,15 +124,7 @@ export async function cleanupPanelsAndEditors(): Promise<void> {
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
         await new Promise(resolve => setTimeout(resolve, CLEANUP_TIMEOUT));
 
-        activePanels.forEach(panel => {
-            try {
-                panel.dispose();
-            } catch (error) {
-                console.error('Error disposing panel:', error);
-            }
-        });
-        activePanels.clear();
-
+        // Remove activePanels cleanup code, just keep tab cleanup
         vscode.window.tabGroups.all.forEach(group => {
             group.tabs.forEach(tab => {
                 try {
@@ -197,17 +177,6 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
 
         registeredCommands.push(...commands);
         context.subscriptions.push(...commands);
-
-        context.subscriptions.push(new vscode.Disposable(() => {
-            activePanels.forEach(panel => {
-                try {
-                    panel.dispose();
-                } catch (error) {
-                    console.error('Error disposing panel:', error);
-                }
-            });
-            activePanels.clear();
-        }));
 
         console.log('Claude extension activated');
     } catch (error) {
