@@ -7,45 +7,10 @@ import { ClaudeResponse } from './api';
 let registeredCommands: vscode.Disposable[] = [];
 const activePanels = new Set<vscode.Disposable>();
 let apiService: ClaudeApiService;
-let watchdogTimer: NodeJS.Timeout | undefined;
-let isDeactivating = false;
 
 // Constants
-const WATCHDOG_INTERVAL = 30000; // 30 seconds
 const CLEANUP_TIMEOUT = 1000; // 1 second
 const STATUS_BAR_PRIORITY = 100;
-
-/**
- * Manages watchdog timer for panel cleanup
- */
-class WatchdogManager {
-    private static timer: NodeJS.Timeout | undefined;
-
-    static start() {
-        this.stop();
-        this.timer = setInterval(() => {
-            if (isDeactivating) return;
-            
-            activePanels.forEach(panel => {
-                try {
-                    if (panel instanceof vscode.Disposable) {
-                        panel.dispose();
-                    }
-                } catch (error) {
-                    console.error('Watchdog: Error disposing panel:', error);
-                }
-                activePanels.delete(panel);
-            });
-        }, WATCHDOG_INTERVAL);
-    }
-
-    static stop() {
-        if (this.timer) {
-            clearInterval(this.timer);
-            this.timer = undefined;
-        }
-    }
-}
 
 /**
  * Formats the response from Claude into a markdown document
@@ -91,6 +56,12 @@ export async function createResponsePanel(content: string): Promise<vscode.TextE
             viewColumn: vscode.ViewColumn.Beside
         });
 
+        // Safely handle readonly toggle
+        const commands = await vscode.commands.getCommands(true);
+        if (commands.includes('workbench.action.toggleEditorReadonly')) {
+            await vscode.commands.executeCommand('workbench.action.toggleEditorReadonly');
+        }
+
         if (editor) {
             const disposable = new vscode.Disposable(() => {
                 try {
@@ -134,7 +105,7 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
     statusBarItem.show();
 
     try {
-        const prompt = mode === 'document' 
+        const prompt = mode === 'document'
             ? `Please document this code:\n\n${text}`
             : text;
 
@@ -199,15 +170,12 @@ export async function cleanupPanelsAndEditors(): Promise<void> {
  */
 export async function activate(context: vscode.ExtensionContext, service?: ClaudeApiService) {
     console.log('Claude extension activating...');
-    
+
     try {
         registeredCommands.forEach(cmd => cmd.dispose());
         registeredCommands = [];
-        
-        apiService = service || new DefaultClaudeApiService();
-        WatchdogManager.start();
 
-        context.subscriptions.push(new vscode.Disposable(WatchdogManager.stop));
+        apiService = service || new DefaultClaudeApiService();
 
         // Support command for donations
         context.subscriptions.push(
@@ -215,7 +183,7 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
                 vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
             })
         );
-        
+
         const commands = [
             vscode.commands.registerCommand(
                 'claude-vscode.askClaude',
@@ -253,11 +221,8 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
  */
 export async function deactivate() {
     console.log('Claude extension deactivating...');
-    isDeactivating = true;
 
     try {
-        WatchdogManager.stop();
-        
         registeredCommands.forEach(cmd => cmd.dispose());
         registeredCommands = [];
 
@@ -268,6 +233,6 @@ export async function deactivate() {
         console.error('Error during deactivation:', error);
         throw error;
     } finally {
-        isDeactivating = false;
+        console.log('Thank you for supporting the Open Source!')
     }
 }
