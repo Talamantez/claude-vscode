@@ -2,7 +2,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
 import * as extension from '../../src/extension';
-import { cleanupPanelsAndEditors, createResponsePanel } from '../../extension-files/extension';
+import { cleanupPanelsAndEditors, createResponsePanel } from '../../src/extension';
 
 suite('Claude Extension Test Suite', () => {
     let sandbox: sinon.SinonSandbox;

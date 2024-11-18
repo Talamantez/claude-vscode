@@ -79,7 +79,7 @@ function formatResponse(prompt: string, response: ClaudeResponse, mode: 'general
 /**
  * Creates and manages a response panel
  */
-async function createResponsePanel(content: string): Promise<vscode.TextEditor | undefined> {
+export async function createResponsePanel(content: string): Promise<vscode.TextEditor | undefined> {
     try {
         const doc = await vscode.workspace.openTextDocument({
             content,
@@ -160,7 +160,7 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
 /**
  * Cleans up all panels and editors
  */
-async function cleanupPanelsAndEditors(): Promise<void> {
+export async function cleanupPanelsAndEditors(): Promise<void> {
     try {
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
         await new Promise(resolve => setTimeout(resolve, CLEANUP_TIMEOUT));
