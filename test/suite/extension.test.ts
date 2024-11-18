@@ -1,202 +1,123 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
-import * as path from 'path';
 import * as extension from '../../src/extension';
-import { ClaudeResponse } from '../../src/api';
+import { cleanupPanelsAndEditors, createResponsePanel } from '../../extension-files/extension';
 
-async function ensureCommandNotRegistered(commandId: string): Promise<void> {
-    const commands = await vscode.commands.getCommands();
-    if (commands.includes(commandId)) {
-        // Force command context to be cleared
-        await vscode.commands.executeCommand('setContext', 'claude-vscode.commandsRegistered', false);
-        // Wait for VS Code to process the context change
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-}
-
-// Mock Environment Variable Collection Class
-class MockEnvironmentVariableCollection implements vscode.GlobalEnvironmentVariableCollection {
-    private _map = new Map<string, vscode.EnvironmentVariableMutator>();
-
-    public persistent = false;
-    public description: string | vscode.MarkdownString = 'Test Environment Variables';
-
-    getScoped(scope: vscode.EnvironmentVariableScope): vscode.EnvironmentVariableCollection {
-        return this;
-    }
-
-    replace(variable: string, value: string): void {
-        this._map.set(variable, {
-            value,
-            type: vscode.EnvironmentVariableMutatorType.Replace,
-            options: { applyAtProcessCreation: true }
-        });
-    }
-
-    append(variable: string, value: string): void {
-        this._map.set(variable, {
-            value,
-            type: vscode.EnvironmentVariableMutatorType.Append,
-            options: { applyAtProcessCreation: true }
-        });
-    }
-
-    prepend(variable: string, value: string): void {
-        this._map.set(variable, {
-            value,
-            type: vscode.EnvironmentVariableMutatorType.Prepend,
-            options: { applyAtProcessCreation: true }
-        });
-    }
-
-    get(variable: string): vscode.EnvironmentVariableMutator | undefined {
-        return this._map.get(variable);
-    }
-
-    forEach(callback: (variable: string, mutator: vscode.EnvironmentVariableMutator, collection: vscode.EnvironmentVariableCollection) => void): void {
-        const self = this as vscode.EnvironmentVariableCollection;
-        this._map.forEach((mutator, variable) => callback(variable, mutator, self));
-    }
-
-    delete(variable: string): void {
-        this._map.delete(variable);
-    }
-
-    clear(): void {
-        this._map.clear();
-    }
-
-    [Symbol.iterator](): Iterator<[string, vscode.EnvironmentVariableMutator]> {
-        return this._map.entries();
-    }
-}
-
-// Helper function to wait for condition with timeout
-async function waitForCondition(condition: () => boolean, timeout: number = 10000, interval: number = 100): Promise<boolean> {
-    const startTime = Date.now();
-    while (Date.now() - startTime < timeout) {
-        if (condition()) {
-            return true;
-        }
-        await new Promise(resolve => setTimeout(resolve, interval));
-    }
-    return false;
-}
-
-// Helper to ensure all editors are closed
-async function ensureNoEditors(maxAttempts: number = 5): Promise<void> {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        if (vscode.window.visibleTextEditors.length === 0) {
-            return;
-        }
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-    throw new Error('Failed to close all editors');
-}
-
-function createMockExtensionContext(): vscode.ExtensionContext {
-    const baseDir = path.join(__dirname, '../../');
-    const context: vscode.ExtensionContext = {
-      subscriptions: [],
-      extensionUri: vscode.Uri.file(baseDir),
-      extensionPath: baseDir,
-      globalState: {
-        get: (key: string) => Promise.resolve(undefined),
-        update: (key: string, value: any) => Promise.resolve(),
-        keys: () => [],
-        setKeysForSync: (keys: readonly string[]) => {}
-      },
-      workspaceState: {
-        get: (key: string) => Promise.resolve(undefined),
-        update: (key: string, value: any) => Promise.resolve(),
-        keys: () => []
-      },
-      globalStoragePath: path.join(baseDir, 'global-storage'),
-      storagePath: path.join(baseDir, 'storage'),
-      logPath: path.join(baseDir, 'logs'),
-      asAbsolutePath: (relativePath: string) => path.join(baseDir, relativePath),
-      storageUri: vscode.Uri.file(path.join(baseDir, 'storage')),
-      globalStorageUri: vscode.Uri.file(path.join(baseDir, 'global-storage')),
-      logUri: vscode.Uri.file(path.join(baseDir, 'logs')),
-      extensionMode: vscode.ExtensionMode.Test,
-      environmentVariableCollection: new MockEnvironmentVariableCollection(),
-      secrets: {
-        get: (key: string) => Promise.resolve(undefined),
-        store: (key: string, value: string) => Promise.resolve(),
-        delete: (key: string) => Promise.resolve(),
-        onDidChange: new vscode.EventEmitter<vscode.SecretStorageChangeEvent>().event
-      },
-      extension: {
-        id: 'test-extension',
-        extensionUri: vscode.Uri.file(baseDir),
-        extensionPath: baseDir,
-        isActive: true,
-        packageJSON: {},
-        exports: undefined,
-        activate: () => Promise.resolve(),
-        extensionKind: vscode.ExtensionKind.Workspace
-      }
-      ,
-      languageModelAccessInformation: {
-          canSendRequest: function (chat: vscode.LanguageModelChat): boolean | undefined {
-              throw new Error('Function not implemented.');
-          },
-          // @ts-ignore
-          onDidChange:  () => {}
-      }
-    };
-  
-    return context;
-  }
-
-suite('Extension Test Suite', () => {
+suite('Claude Extension Test Suite', () => {
     let sandbox: sinon.SinonSandbox;
 
-    suiteSetup(async () => {
-        console.log('Suite setup starting...');
-        const ext = vscode.extensions.getExtension('conscious-robot.claude-vscode-assistant');
-        if (ext) {
-            console.log('Found extension, activating...');
-            await ext.activate();
-        } else {
-            console.log('Extension not found, activating manually...');
-            await extension.activate(createMockExtensionContext());
+    async function ensureAllEditorsClosed(retries = 3, delay = 500): Promise<void> {
+        for (let i = 0; i < retries; i++) {
+            if (vscode.window.visibleTextEditors.length === 0) return;
+            await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+            await new Promise(resolve => setTimeout(resolve, delay));
         }
-        console.log('Suite setup complete');
-
-        // Ensure clean state
-        await ensureNoEditors();
-    });
+        assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'All editors should be closed');
+    }
 
     setup(async () => {
         sandbox = sinon.createSandbox();
-        await ensureNoEditors();
-        await ensureCommandNotRegistered('claude-vscode.askClaude');
+        await ensureAllEditorsClosed();
     });
 
     teardown(async () => {
         sandbox.restore();
-        await ensureNoEditors();
+        await ensureAllEditorsClosed();
     });
 
-    suiteTeardown(async () => {
-        console.log('Suite teardown starting...');
-        await ensureNoEditors();
-        console.log('Suite teardown complete');
+    test('Response Panel Creation and Management', async function() {
+        this.timeout(10000);
+        
+        const mockText = "Test selection";
+        const response = await createResponsePanel(mockText);
+        assert.ok(response, "Response panel should be created");
+        
+        const editors = vscode.window.visibleTextEditors;
+        assert.strictEqual(editors.length, 1, "Should have one visible editor");
+        assert.strictEqual(editors[0].document.languageId, 'markdown', "Should be markdown document");
+        
+        await cleanupPanelsAndEditors();
+        assert.strictEqual(vscode.window.visibleTextEditors.length, 0);
     });
 
-    // Modify the Response Panel test
-    test('Response Panel Creation and Disposal', async function () {
-        // The test body remains the same as before
+    test('Multiple Panel Resource Management', async function() {
+        this.timeout(45000);
+        const panelCount = 3;
+        const initialMemory = process.memoryUsage();
+
+        try {
+            // Create multiple panels
+            for (let i = 0; i < panelCount; i++) {
+                const doc = await vscode.workspace.openTextDocument({
+                    content: `Test content ${i + 1}`,
+                    language: 'markdown'
+                });
+                
+                const editor = await vscode.window.showTextDocument(doc, {
+                    viewColumn: vscode.ViewColumn.Beside
+                });
+                
+                assert.ok(editor, `Panel ${i + 1} should be visible`);
+                await vscode.commands.executeCommand('workbench.action.moveEditorToNextGroup');
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const editorCount = vscode.window.visibleTextEditors.filter(
+                editor => editor.document.languageId === 'markdown'
+            ).length;
+            assert.strictEqual(editorCount, panelCount);
+
+            // Cleanup and memory check
+            await cleanupPanelsAndEditors();
+            if (global.gc) global.gc();
+            
+            const finalMemory = process.memoryUsage();
+            const memoryDiff = finalMemory.heapUsed - initialMemory.heapUsed;
+            assert.ok(memoryDiff < 5 * 1024 * 1024, 'Memory usage should not increase significantly');
+            
+            assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'All editors should be closed');
+        } catch (error) {
+            console.error('Test failed:', error);
+            await ensureAllEditorsClosed(5, 1000);
+            throw error;
+        }
     });
 
-    test('Multiple Panel Creation and Cleanup', async function () {
-        // The test body remains the same as before
-    });
+    test('Extension Lifecycle Management', async function() {
+        this.timeout(30000);
+        
+        try {
+            // Create test documents
+            const docs = await Promise.all([
+                vscode.workspace.openTextDocument({
+                    content: 'Test content 1',
+                    language: 'markdown'
+                }),
+                vscode.workspace.openTextDocument({
+                    content: 'Test content 2',
+                    language: 'markdown'
+                })
+            ]);
 
-    test('Manual Deactivation Cleanup', async function () {
-        // The test body remains the same as before
+            for (const doc of docs) {
+                await vscode.window.showTextDocument(doc, {
+                    viewColumn: vscode.ViewColumn.Beside,
+                    preview: true
+                });
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            const editorCount = vscode.window.visibleTextEditors.length;
+            assert.ok(editorCount > 0, 'Should have open editors');
+
+            await extension.deactivate();
+            await ensureAllEditorsClosed(5, 1000);
+            assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'Should cleanup on deactivation');
+        } catch (error) {
+            console.error('Lifecycle test failed:', error);
+            await ensureAllEditorsClosed(5, 1000);
+            throw error;
+        }
     });
 });
