@@ -1,4 +1,6 @@
-﻿# Right Click? Claude!
+By [Conscious Robot](https://conscious-robot.com)
+ 
+ # Right Click? Claude!
 
 "We go faster when we go together!" [Baratunde Thurston](https://podcasts.apple.com/us/podcast/life-with-machines/id1766829040)
 
