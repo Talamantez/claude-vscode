@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [1.1.4] - 2024-11-18
+### Changed
+ - Update Readme with new product announcement
+
+## [1.1.4] - 2024-11-18
 ### Fixed
 - Remove auto-closing of response windows
 - Simplified window management
