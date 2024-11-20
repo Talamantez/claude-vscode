@@ -5,7 +5,7 @@ Bring the power of Claude directly into your development workflow. This extensio
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/conscious.robot)
 
 [Support Feminist Inclusion Leadership Uganda](https://www.mchanga.africa/fundraiser/97578) <a href="https://www.mchanga.africa/fundraiser/97578">
-  <img src="feminist-inclusion-leadership-center/filc1.jpg" alt="Feminist Inclusion Leadership Uganda Image 1" width="400" />
+  <img src="feminist-inclusion-leadership-center/filc1.jpg" alt="Feminist Inclusion Leadership Uganda Image 1" width="100" />
 </a>
 
 By [Conscious Robot](https://conscious-robot.com)
@@ -13,7 +13,7 @@ Inspired by [Baratunde "We go faster when we go together" Thurston](https://podc
 
 # 🎉 Celebrating 70 Installs! 🎉
 
-A huge **THANK YOU** to all the amazing users who have installed and supported this extension! Together we can build a safer, saner internet! 🙌
+A huge **THANK YOU** to all the amazing users who have installed and supported this extension! Together we can build a happy, safe, easy to use internet! (go fig!:-D) 🙌
 
 Introducing the Beep to Claude AI Assistant's Boop, [FlashRepo](https://marketplace.visualstudio.com/items?itemName=conscious-robot.flash-repo)! Easily concatenate repository files for AI context sharing.
 
