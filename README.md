@@ -4,6 +4,9 @@ Bring the power of Claude directly into your development workflow. This extensio
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/conscious.robot)
 
+[Support Feminist Inclusion Leadership Uganda](https://www.mchanga.africa/fundraiser/97578) <a href="https://www.mchanga.africa/fundraiser/97578">
+  <img src="feminist-inclusion-leadership-center/filc1.jpg" alt="Feminist Inclusion Leadership Uganda Image 1" width="400" />
+</a>
 
 By [Conscious Robot](https://conscious-robot.com)
 Inspired by [Baratunde "We go faster when we go together" Thurston](https://podcasts.apple.com/us/podcast/life-with-machines/id1766829040)
@@ -97,3 +100,5 @@ Please consider learning more about their mission and supporting their fundraise
 ## Call for Feature Requests
 
 What's working? What's not? What are your other painpoints in your AI workflow? Want to chat about fresh baked lemon cupcakes? Don't be shy. [Open an Issue!](https://github.com/username/repository/issues/new)
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/conscious.robot)
