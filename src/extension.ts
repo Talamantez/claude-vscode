@@ -162,33 +162,44 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
     console.log('Claude extension activating...');
 
     try {
-        registeredCommands.forEach(cmd => cmd.dispose());
+        // Cleanup any existing commands first
+        registeredCommands.forEach(cmd => {
+            try {
+                cmd.dispose();
+            } catch (error) {
+                console.warn('Error disposing command:', error);
+            }
+        });
         registeredCommands = [];
 
         apiService = service || new DefaultClaudeApiService();
 
         // Support command for donations
-        context.subscriptions.push(
-            vscode.commands.registerCommand('claude-vscode.support', () => {
-                vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
-            })
+        const supportCommand = vscode.commands.registerCommand('claude-vscode.support', () => {
+            vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
+        });
+
+        // Main commands
+        const askCommand = vscode.commands.registerCommand(
+            'claude-vscode.askClaude',
+            () => handleClaudeRequest('general')
         );
 
-        const commands = [
-            vscode.commands.registerCommand(
-                'claude-vscode.askClaude',
-                () => handleClaudeRequest('general')
-            ),
-            vscode.commands.registerCommand(
-                'claude-vscode.documentCode',
-                () => handleClaudeRequest('document')
-            )
-        ];
+        const documentCommand = vscode.commands.registerCommand(
+            'claude-vscode.documentCode',
+            () => handleClaudeRequest('document')
+        );
 
-        registeredCommands.push(...commands);
-        context.subscriptions.push(...commands);
+        // Store commands
+        registeredCommands = [supportCommand, askCommand, documentCommand];
+
+        // Add to subscriptions
+        context.subscriptions.push(...registeredCommands);
 
         console.log('Claude extension activated');
+
+        // Return activation promise
+        return Promise.resolve();
     } catch (error) {
         console.error('Error during activation:', error);
         throw error;
