@@ -11,7 +11,7 @@ Bring the power of Claude directly into your development workflow. This extensio
 By [Conscious Robot](https://conscious-robot.com)
 Inspired by [Baratunde "We go faster when we go together" Thurston](https://podcasts.apple.com/us/podcast/life-with-machines/id1766829040)
 
-# 🎉 Celebrating 70 Installs! 🎉
+# 🎉 Celebrating 100 Installs! 🎉
 
 A huge **THANK YOU** to all the amazing users who have installed and supported this extension! Together we can build a happy, safe, easy to use internet! (go fig!:-D) 🙌
 
