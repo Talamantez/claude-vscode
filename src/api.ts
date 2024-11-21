@@ -42,7 +42,7 @@ function isClaudeMessageContent(item: unknown): item is ClaudeMessageContent {
 
 function isClaudeResponse(data: unknown): data is ClaudeResponse {
     const response = data as Partial<ClaudeResponse>;
-    
+
     // Basic structure check
     if (typeof data !== 'object' || data === null) {
         return false;
@@ -94,13 +94,13 @@ function isClaudeResponse(data: unknown): data is ClaudeResponse {
     return true;
 }
 
-export async function askClaude(text: string): Promise<ClaudeResponse> {
+export async function askClaude(text: string, token?: vscode.CancellationToken): Promise<ClaudeResponse> {
     const config = getConfiguration();
-    
+
     if (!config.apiKey && !process.env.CLAUDE_API_KEY) {
         throw new Error('No API key configured. Please add your Claude API key in settings.');
     }
-    
+
     try {
         const response = await fetch(SERVICE_URL, {
             method: 'POST',
@@ -108,10 +108,11 @@ export async function askClaude(text: string): Promise<ClaudeResponse> {
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache'
             },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 prompt: text,
                 model: config.model
-            })
+            }),
+            signal: token ? new AbortController().signal : undefined
         });
 
         if (!response.ok) {
@@ -120,12 +121,12 @@ export async function askClaude(text: string): Promise<ClaudeResponse> {
         }
 
         const data: unknown = await response.json();
-        
+
         if (!isClaudeResponse(data)) {
             console.error('Invalid response structure:', data);
             throw new Error('Invalid response format from Claude API');
         }
-        
+
         return data;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

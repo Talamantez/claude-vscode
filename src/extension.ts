@@ -6,6 +6,7 @@ import { ClaudeResponse } from './api';
 // Global state management
 let registeredCommands: vscode.Disposable[] = [];
 let apiService: ClaudeApiService;
+let cancellationTokenSource: vscode.CancellationTokenSource | undefined;
 
 // Constants
 const CLEANUP_TIMEOUT = 1000; // 1 second
@@ -77,7 +78,8 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
         vscode.window.showInformationMessage('No active editor!');
         return;
     }
-
+    cancellationTokenSource = new vscode.CancellationTokenSource();
+    const cancellationToken = cancellationTokenSource.token;
     const selection = editor.selection;
     const text = editor.document.getText(selection);
     if (!text) {
@@ -100,19 +102,27 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
         const response = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: mode === 'document' ? 'Generating Documentation...' : 'Asking Claude...',
-            cancellable: false
-        }, async () => {
-            return await apiService.askClaude(prompt);
+            cancellable: true
+        }, async (progress, token) => {
+            return await apiService.askClaude(prompt, token);
         });
 
         const formattedResponse = formatResponse(text, response, mode);
         await createResponsePanel(formattedResponse);
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        vscode.window.showErrorMessage(`Error: ${errorMessage}`);
-        console.error('Error handling Claude request:', error);
+        if (error instanceof vscode.CancellationError) {
+            vscode.window.showInformationMessage('Request cancelled');
+        } else {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            vscode.window.showErrorMessage(`Error: ${errorMessage}`);
+            console.error('Error handling Claude request:', error);
+        }
     } finally {
         statusBarItem.dispose();
+        if (cancellationTokenSource) {
+            cancellationTokenSource.dispose();
+            cancellationTokenSource = undefined;
+        }
     }
 }
 

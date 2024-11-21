@@ -3,35 +3,16 @@ import * as vscode from 'vscode';
 import { askClaude as apiAskClaude, ClaudeResponse } from '../api';
 
 export interface ClaudeApiService {
-    askClaude(text: string): Promise<ClaudeResponse>;
+    askClaude(text: string, token?: vscode.CancellationToken): Promise<ClaudeResponse>;
 }
 
 export class DefaultClaudeApiService implements ClaudeApiService {
-    private readonly _disposables: vscode.Disposable[] = [];
-
-    constructor() {
-        // Add any initialization if needed
-    }
-
-    async askClaude(text: string): Promise<ClaudeResponse> {
+    async askClaude(text: string, token?: vscode.CancellationToken): Promise<ClaudeResponse> {
         try {
-            return await apiAskClaude(text);
+            return await apiAskClaude(text, token);
         } catch (error) {
             console.error('Error in DefaultClaudeApiService:', error);
             throw error;
-        }
-    }
-
-    dispose(): void {
-        while (this._disposables.length) {
-            const disposable = this._disposables.pop();
-            if (disposable) {
-                try {
-                    disposable.dispose();
-                } catch (error) {
-                    console.error('Error disposing service:', error);
-                }
-            }
         }
     }
 }
