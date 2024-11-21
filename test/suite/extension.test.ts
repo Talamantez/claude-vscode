@@ -87,130 +87,235 @@ suite('Claude Extension Test Suite', () => {
         }
     });
 
-    test('Cancel Button Functionality', async function () {
-        this.timeout(45000);
+    /**
+     * Tests for the Claude VS Code extension
+     */
+    suite('Claude Extension Test Suite', () => {
+        let sandbox: sinon.SinonSandbox;
 
-        try {
-            await extension.deactivate();
+        /**
+         * Helper function to ensure all editors are closed before/after tests
+         */
+        async function ensureAllEditorsClosed(retries = 3, delay = 500): Promise<void> {
+            for (let i = 0; i < retries; i++) {
+                if (vscode.window.visibleTextEditors.length === 0) return;
+                await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'All editors should be closed');
+        }
+
+        setup(async () => {
+            sandbox = sinon.createSandbox();
+            await ensureAllEditorsClosed();
+        });
+
+        teardown(async () => {
+            sandbox.restore();
+            await ensureAllEditorsClosed();
+        });
+
+        /**
+         * Tests basic response panel creation and cleanup
+         */
+        test('Response Panel Creation and Management', async function () {
+            this.timeout(10000);
 
             const mockText = "Test selection";
-            let mockResolve: (value: any) => void;
+            const mockResponse = await createResponsePanel(mockText);
+            assert.ok(mockResponse, "Response panel should be created");
 
-            // Create stub with better control over resolution
-            const askClaudeStub = sinon.stub();
-            const mockPromise = new Promise(resolve => {
-                mockResolve = resolve;
-            });
+            const editors = vscode.window.visibleTextEditors;
+            assert.strictEqual(editors.length, 1, "Should have one visible editor");
 
-            askClaudeStub.returns(mockPromise);
+            await cleanupPanelsAndEditors();
+        });
 
-            const mockApiService: ClaudeApiService = {
-                askClaude: askClaudeStub
-            };
+        /**
+         * Tests handling of multiple panels and resource cleanup
+         */
+        test('Multiple Panel Resource Management', async function () {
+            this.timeout(45000);
+            const panelCount = 3;
+            const initialMemory = process.memoryUsage();
 
-            const mockContext = {
-                subscriptions: [],
-                workspaceState: {
-                    get: () => undefined,
-                    update: () => Promise.resolve()
-                },
-                globalState: {
-                    get: () => undefined,
-                    update: () => Promise.resolve(),
-                    setKeysForSync: () => { }
-                },
-                extensionPath: '',
-                storagePath: '',
-                logPath: '',
-                extensionUri: vscode.Uri.file(''),
-                asAbsolutePath: (relativePath: string) => relativePath,
-                secrets: {
-                    get: () => Promise.resolve(undefined),
-                    store: () => Promise.resolve(),
-                    delete: () => Promise.resolve()
-                },
-                globalStorageUri: vscode.Uri.file(''),
-                logUri: vscode.Uri.file(''),
-                storageUri: vscode.Uri.file(''),
-                globalStoragePath: ''
-            };
+            try {
+                // Create multiple panels
+                for (let i = 0; i < panelCount; i++) {
+                    const doc = await vscode.workspace.openTextDocument({
+                        content: `Test content ${i + 1}`,
+                        language: 'markdown'
+                    });
 
-            // Activate with mock context and service
-            await extension.activate(mockContext as unknown as vscode.ExtensionContext, mockApiService);
-            await new Promise(resolve => setTimeout(resolve, 100));
+                    const editor = await vscode.window.showTextDocument(doc, {
+                        viewColumn: vscode.ViewColumn.Beside
+                    });
 
-            await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-
-            // Set up test document
-            const doc = await vscode.workspace.openTextDocument({
-                content: mockText,
-                language: 'plaintext'
-            });
-
-            const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
-            editor.selection = new vscode.Selection(0, 0, 0, mockText.length);
-
-            // Start the command execution
-            const commandPromise = vscode.commands.executeCommand('claude-vscode.askClaude');
-
-            // Wait a bit to ensure the command has started
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            // Log the stub calls
-            console.log('Stub called times:', askClaudeStub.callCount);
-            console.log('Stub call args:', askClaudeStub.firstCall?.args);
-
-            // Resolve with cancellation response
-            mockResolve({
-                content: [{
-                    type: 'text',
-                    text: 'Request cancelled'
-                }],
-                id: 'test-id',
-                model: 'claude-3-opus-20240229',
-                role: 'assistant',
-                stop_reason: 'cancelled',
-                stop_sequence: null,
-                type: 'message',
-                usage: {
-                    input_tokens: 0,
-                    output_tokens: 0
+                    assert.ok(editor, `Panel ${i + 1} should be visible`);
+                    await vscode.commands.executeCommand('workbench.action.moveEditorToNextGroup');
+                    await new Promise(resolve => setTimeout(resolve, 100));
                 }
-            });
 
-            // Wait for the command to complete
-            await commandPromise;
+                const editorCount = vscode.window.visibleTextEditors.filter(
+                    editor => editor.document.languageId === 'markdown'
+                ).length;
+                assert.strictEqual(editorCount, panelCount);
 
-            // Give VS Code time to update UI
-            await new Promise(resolve => setTimeout(resolve, 500));
+                await cleanupPanelsAndEditors();
+                if (global.gc) global.gc();
 
-            // Get all editors and log their content
-            const visibleEditors = vscode.window.visibleTextEditors;
-            console.log('Number of visible editors:', visibleEditors.length);
-
-            for (const editor of visibleEditors) {
-                console.log('Editor language:', editor.document.languageId);
-                console.log('Editor content:', editor.document.getText());
+                const finalMemory = process.memoryUsage();
+                const memoryDiff = finalMemory.heapUsed - initialMemory.heapUsed;
+                assert.ok(memoryDiff < 5 * 1024 * 1024, 'Memory usage should not increase significantly');
+                assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'All editors should be closed');
+            } catch (error) {
+                console.error('Test failed:', error);
+                await ensureAllEditorsClosed(5, 1000);
+                throw error;
             }
+        });
 
-            const markdownEditors = visibleEditors.filter(e => e.document.languageId === 'markdown');
-            assert.strictEqual(markdownEditors.length, 1, "Should have one markdown editor");
+        /**
+         * Tests the request cancellation functionality
+         */
+        test('Cancel Button Functionality', async function () {
+            this.timeout(45000);
 
-            const responseText = markdownEditors[0].document.getText();
-            console.log('Response text:', responseText);
+            try {
+                await extension.deactivate();
 
-            assert.ok(
-                responseText.includes('Request cancelled'),
-                `Response should include cancellation message. Full response: ${responseText}`
-            );
+                // Set up mock API with controlled response timing
+                let mockResolve: (value: any) => void;
+                const askClaudeStub = sinon.stub();
+                const mockPromise = new Promise(resolve => {
+                    mockResolve = resolve;
+                });
+                askClaudeStub.returns(mockPromise);
 
-        } catch (error) {
-            console.error('Cancel button test failed:', error);
-            throw error;
-        } finally {
-            await ensureAllEditorsClosed(5, 1000);
-            await extension.deactivate();
-        }
+                // Create mock API service
+                const mockApiService: ClaudeApiService = {
+                    askClaude: askClaudeStub
+                };
+
+                // Set up mock extension context
+                const mockContext = {
+                    subscriptions: [],
+                    workspaceState: {
+                        get: () => undefined,
+                        update: () => Promise.resolve()
+                    },
+                    globalState: {
+                        get: () => undefined,
+                        update: () => Promise.resolve(),
+                        setKeysForSync: () => { }
+                    },
+                    extensionPath: '',
+                    storagePath: '',
+                    logPath: '',
+                    extensionUri: vscode.Uri.file(''),
+                    asAbsolutePath: (relativePath: string) => relativePath,
+                    secrets: {
+                        get: () => Promise.resolve(undefined),
+                        store: () => Promise.resolve(),
+                        delete: () => Promise.resolve()
+                    },
+                    globalStorageUri: vscode.Uri.file(''),
+                    logUri: vscode.Uri.file(''),
+                    storageUri: vscode.Uri.file(''),
+                    globalStoragePath: ''
+                };
+
+                // Initialize extension with mocks
+                await extension.activate(mockContext as unknown as vscode.ExtensionContext, mockApiService);
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+
+                // Create test document with selection
+                const mockText = "Test selection";
+                const doc = await vscode.workspace.openTextDocument({
+                    content: mockText,
+                    language: 'plaintext'
+                });
+                const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+                editor.selection = new vscode.Selection(0, 0, 0, mockText.length);
+
+                // Execute Claude command and handle response
+                const commandPromise = vscode.commands.executeCommand('claude-vscode.askClaude');
+
+                // Simulate response after delay
+                setTimeout(() => {
+                    mockResolve({
+                        content: [{
+                            type: 'text',
+                            text: 'Request cancelled'
+                        }],
+                        id: 'test-id',
+                        model: 'claude-3-opus-20240229',
+                        role: 'assistant',
+                        stop_reason: 'cancelled',
+                        stop_sequence: null,
+                        type: 'message',
+                        usage: { input_tokens: 0, output_tokens: 0 }
+                    });
+                }, 200);
+
+                await commandPromise;
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Verify final state
+                const visibleEditors = vscode.window.visibleTextEditors;
+                const markdownEditors = visibleEditors.filter(e => e.document.languageId === 'markdown');
+                assert.strictEqual(markdownEditors.length, 1, "Should have one markdown editor");
+                assert.ok(markdownEditors[0].document.getText().includes('Request cancelled'));
+
+            } catch (error) {
+                console.error('Cancel button test failed:', error);
+                throw error;
+            } finally {
+                await ensureAllEditorsClosed(5, 1000);
+                await extension.deactivate();
+            }
+        });
+
+        /**
+         * Tests extension activation and deactivation lifecycle
+         */
+        test('Extension Lifecycle Management', async function () {
+            this.timeout(30000);
+
+            try {
+                const docs = await Promise.all([
+                    vscode.workspace.openTextDocument({
+                        content: 'Test content 1',
+                        language: 'markdown'
+                    }),
+                    vscode.workspace.openTextDocument({
+                        content: 'Test content 2',
+                        language: 'markdown'
+                    })
+                ]);
+
+                for (const doc of docs) {
+                    await vscode.window.showTextDocument(doc, {
+                        viewColumn: vscode.ViewColumn.Beside,
+                        preview: true
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                const editorCount = vscode.window.visibleTextEditors.length;
+                assert.ok(editorCount > 0, 'Should have open editors');
+
+                await extension.deactivate();
+                await ensureAllEditorsClosed(5, 1000);
+                assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'Should cleanup on deactivation');
+            } catch (error) {
+                console.error('Lifecycle test failed:', error);
+                await ensureAllEditorsClosed(5, 1000);
+                throw error;
+            }
+        });
     });
 
     test('Extension Lifecycle Management', async function () {
