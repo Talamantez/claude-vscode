@@ -76,12 +76,15 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
         vscode.window.showInformationMessage('No active editor!');
         return;
     }
-    cancellationTokenSource = new vscode.CancellationTokenSource();
-    const cancellationToken = cancellationTokenSource.token;
+    
+    // Create new CancellationTokenSource
+    const tokenSource = new vscode.CancellationTokenSource();
+    
     const selection = editor.selection;
     const text = editor.document.getText(selection);
     if (!text) {
         vscode.window.showInformationMessage('Please select some text first');
+        tokenSource.dispose();
         return;
     }
 
@@ -101,8 +104,13 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
             location: vscode.ProgressLocation.Notification,
             title: mode === 'document' ? 'Generating Documentation...' : 'Asking Claude...',
             cancellable: true
-        }, async (progress, token) => {
-            return await apiService.askClaude(prompt, token);
+        }, async (progress, progressToken) => {
+            // Link the progress cancellation to our token source
+            progressToken.onCancellationRequested(() => {
+                tokenSource.cancel();
+            });
+            
+            return await apiService.askClaude(prompt, tokenSource.token);
         });
 
         const formattedResponse = formatResponse(text, response, mode);
@@ -110,17 +118,14 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
     } catch (error) {
         if (error instanceof vscode.CancellationError) {
             vscode.window.showInformationMessage('Request cancelled');
-        } else {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            vscode.window.showErrorMessage(`Error: ${errorMessage}`);
-            console.error('Error handling Claude request:', error);
+            return;
         }
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        vscode.window.showErrorMessage(`Error: ${errorMessage}`);
+        console.error('Error handling Claude request:', error);
     } finally {
         statusBarItem.dispose();
-        if (cancellationTokenSource) {
-            cancellationTokenSource.dispose();
-            cancellationTokenSource = undefined;
-        }
+        tokenSource.dispose();
     }
 }
 

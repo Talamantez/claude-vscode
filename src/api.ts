@@ -101,6 +101,14 @@ export async function askClaude(text: string, token?: vscode.CancellationToken):
         throw new Error('No API key configured. Please add your Claude API key in settings.');
     }
 
+    // Create AbortController and link it to the cancellation token
+    const abortController = new AbortController();
+    if (token) {
+        token.onCancellationRequested(() => {
+            abortController.abort();
+        });
+    }
+
     try {
         const response = await fetch(SERVICE_URL, {
             method: 'POST',
@@ -112,7 +120,7 @@ export async function askClaude(text: string, token?: vscode.CancellationToken):
                 prompt: text,
                 model: config.model
             }),
-            signal: token ? new AbortController().signal : undefined
+            signal: abortController.signal // Use the AbortController's signal
         });
 
         if (!response.ok) {
@@ -129,6 +137,10 @@ export async function askClaude(text: string, token?: vscode.CancellationToken):
 
         return data;
     } catch (error) {
+        // Check if the error was due to cancellation
+        if (error instanceof Error && error.name === 'AbortError') {
+            throw new vscode.CancellationError();
+        }
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         vscode.window.showErrorMessage(`Failed to call Claude: ${errorMessage}`);
         throw error;
