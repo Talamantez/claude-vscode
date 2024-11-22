@@ -340,7 +340,7 @@ suite('Claude Extension Test Suite', () => {
             for (const doc of docs) {
                 await vscode.window.showTextDocument(doc, {
                     viewColumn: vscode.ViewColumn.Beside,
-                    preview: true
+                    preview: false
                 });
                 await waitForExtensionReady(100);
             }
