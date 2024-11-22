@@ -26,5 +26,6 @@
         "ghcr.io/devcontainers/features/git:1": {}
     },
     "postCreateCommand": "npm install",
-    "remoteUser": "node"
+    "remoteUser": "node",
+    "postStartCommand": "npm install -g @vscode/vsce"
 }
