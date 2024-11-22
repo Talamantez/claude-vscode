@@ -50,7 +50,7 @@ export async function createResponsePanel(content: string): Promise<vscode.TextE
         });
 
         const editor = await vscode.window.showTextDocument(doc, {
-            preview: true,
+            preview: false,
             viewColumn: vscode.ViewColumn.Beside
         });
 
