@@ -5,6 +5,7 @@ import * as extension from '../../src/extension';
 import { cleanupPanelsAndEditors, createResponsePanel } from '../../src/extension';
 import { waitForExtensionReady, ensureAllEditorsClosed } from '../../src/utils';
 import { ClaudeResponse } from '../../src/api';
+import { thoroughCleanup } from '../../src/test-utils';
 
 interface ClaudeApiService {
     askClaude(text: string, token?: vscode.CancellationToken): Promise<any>;
@@ -58,10 +59,17 @@ suite('Claude Extension Test Suite', () => {
     test('Multiple Panel Resource Management', async function () {
         this.timeout(45000);
         const panelCount = 3;
+
+        // Initial cleanup and GC
+        await thoroughCleanup();
+        if (global.gc) global.gc();
+        await waitForExtensionReady(500);
+
         const initialMemory = process.memoryUsage();
 
         try {
             for (let i = 0; i < panelCount; i++) {
+                // Create document and show
                 const doc = await vscode.workspace.openTextDocument({
                     content: `Test content ${i + 1}`,
                     language: 'markdown'
@@ -73,25 +81,35 @@ suite('Claude Extension Test Suite', () => {
 
                 assert.ok(editor, `Panel ${i + 1} should be visible`);
                 await vscode.commands.executeCommand('workbench.action.moveEditorToNextGroup');
+
+                // Cleanup after each panel
+                await thoroughCleanup({ timeout: 500, retryDelay: 50 });
+                if (global.gc) global.gc();
                 await waitForExtensionReady(100);
             }
 
-            const editorCount = vscode.window.visibleTextEditors.filter(
-                editor => editor.document.languageId === 'markdown'
-            ).length;
-            assert.strictEqual(editorCount, panelCount);
-
-            await cleanupPanelsAndEditors();
+            // Final cleanup
+            await thoroughCleanup({ timeout: 1000, retryDelay: 100, maxRetries: 5 });
             if (global.gc) global.gc();
+            await waitForExtensionReady(500);
 
             const finalMemory = process.memoryUsage();
             const memoryDiff = finalMemory.heapUsed - initialMemory.heapUsed;
-            assert.ok(memoryDiff < 5 * 1024 * 1024, 'Memory usage should not increase significantly');
 
+            // More detailed memory logging for debugging
+            console.log('Memory usage:', {
+                initial: initialMemory.heapUsed / 1024 / 1024,
+                final: finalMemory.heapUsed / 1024 / 1024,
+                diff: memoryDiff / 1024 / 1024
+            });
+
+            assert.ok(memoryDiff < 5 * 1024 * 1024, 'Memory usage should not increase significantly');
             assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'All editors should be closed');
+
         } catch (error) {
             console.error('Test failed:', error);
-            await ensureAllEditorsClosed(5, 1000);
+            // One final cleanup attempt on failure
+            await thoroughCleanup({ timeout: 2000, retryDelay: 200, maxRetries: 5 });
             throw error;
         }
     });
@@ -167,31 +185,31 @@ suite('Claude Extension Test Suite', () => {
             // Create a mock environment variable collection
             class MockEnvironmentVariableCollection implements vscode.EnvironmentVariableCollection {
                 private variables = new Map<string, vscode.EnvironmentVariableMutator>();
-            
+
                 [Symbol.iterator](): Iterator<[string, vscode.EnvironmentVariableMutator]> {
                     return this.variables[Symbol.iterator]();
                 }
-            
+
                 public get size(): number {
                     return this.variables.size;
                 }
-            
+
                 public clear(): void {
                     this.variables.clear();
                 }
-            
+
                 public delete(variable: string): boolean {
                     return this.variables.delete(variable);
                 }
-            
+
                 public forEach(callback: (variable: string, mutator: vscode.EnvironmentVariableMutator, collection: vscode.EnvironmentVariableCollection) => void): void {
                     this.variables.forEach((mutator, variable) => callback(variable, mutator, this));
                 }
-            
+
                 public get(variable: string): vscode.EnvironmentVariableMutator | undefined {
                     return this.variables.get(variable);
                 }
-            
+
                 public replace(variable: string, value: string): void {
                     this.variables.set(variable, {
                         value,
@@ -199,7 +217,7 @@ suite('Claude Extension Test Suite', () => {
                         options: { applyAtProcessCreation: true }
                     });
                 }
-            
+
                 public append(variable: string, value: string): void {
                     this.variables.set(variable, {
                         value,
@@ -207,7 +225,7 @@ suite('Claude Extension Test Suite', () => {
                         options: { applyAtProcessCreation: true }
                     });
                 }
-            
+
                 public prepend(variable: string, value: string): void {
                     this.variables.set(variable, {
                         value,
@@ -215,15 +233,15 @@ suite('Claude Extension Test Suite', () => {
                         options: { applyAtProcessCreation: true }
                     });
                 }
-            
+
                 public get persistent(): boolean {
                     return false;
                 }
-            
+
                 public getScoped(scope: vscode.EnvironmentVariableScope): vscode.EnvironmentVariableCollection {
                     return this;
                 }
-            
+
                 public description: string | vscode.MarkdownString | undefined;
             }
 

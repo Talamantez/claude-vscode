@@ -25,7 +25,6 @@
         },
         "ghcr.io/devcontainers/features/git:1": {}
     },
-    "postCreateCommand": "npm install",
-    "remoteUser": "node",
-    "postStartCommand": "npm install -g @vscode/vsce"
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libdrm2 libgtk-3-0 libasound2 libgbm1 xvfb && npm install -g @vscode/vsce && npm install",
+    "remoteUser": "node"
 }

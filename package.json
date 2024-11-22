@@ -1,7 +1,7 @@
 {
   "name": "claude-vscode-assistant",
   "displayName": "Claude AI Assistant",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "description": "Claude AI assistant for Visual Studio Code",
   "publisher": "conscious-robot",
   "repository": {
@@ -99,7 +99,7 @@
     "publish": "pnpm run verify && vsce publish",
     "verify": "pnpm run build && pnpm run test",
     "pretest": "pnpm run build && pnpm run compile-tests",
-    "test": "node --force-node-api-uncaught-exceptions-policy=true ./out/test/runTest.js",
+    "test": "xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' node --force-node-api-uncaught-exceptions-policy=true ./out/test/runTest.js",
     "compile-tests": "tsc -p ./tsconfig.test.json",
     "watch-tests": "tsc -p ./tsconfig.test.json --watch"
   },

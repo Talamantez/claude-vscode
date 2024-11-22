@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { ClaudeApiService, DefaultClaudeApiService } from './services/claude-api';
 import { ClaudeResponse } from './api';
 import { Timeouts } from './config';
-import { waitForExtensionReady, ensureAllEditorsClosed, unregisterCommands } from './utils';
+import { waitForActiveEditor, ensureResponsePanelActive, EditorTimeoutError } from './editor-utils';
 
 // Global state management
 let registeredCommands: vscode.Disposable[] = [];
@@ -71,23 +71,6 @@ export async function createResponsePanel(content: string): Promise<vscode.TextE
  * Handles Claude API requests
  */
 async function handleClaudeRequest(mode: 'general' | 'document') {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-        vscode.window.showInformationMessage('No active editor!');
-        return;
-    }
-    
-    // Create new CancellationTokenSource
-    const tokenSource = new vscode.CancellationTokenSource();
-    
-    const selection = editor.selection;
-    const text = editor.document.getText(selection);
-    if (!text) {
-        vscode.window.showInformationMessage('Please select some text first');
-        tokenSource.dispose();
-        return;
-    }
-
     const statusBarItem = vscode.window.createStatusBarItem(
         vscode.StatusBarAlignment.Right,
         Timeouts.STATUS_BAR_PRIORITY
@@ -96,28 +79,55 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
     statusBarItem.show();
 
     try {
-        const prompt = mode === 'document'
-            ? `Please document this code:\n\n${text}`
-            : text;
+        // Wait for active editor with retries
+        const editor = await waitForActiveEditor({
+            maxAttempts: 5,
+            delayMs: 200
+        });
+
+        const selection = editor.selection;
+        const text = editor.document.getText(selection);
+        if (!text) {
+            vscode.window.showInformationMessage('Please select some text first');
+            return;
+        }
+
+        const tokenSource = new vscode.CancellationTokenSource();
 
         const response = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: mode === 'document' ? 'Generating Documentation...' : 'Asking Claude...',
             cancellable: true
         }, async (progress, progressToken) => {
-            // Link the progress cancellation to our token source
             progressToken.onCancellationRequested(() => {
                 tokenSource.cancel();
             });
-            
+
+            const prompt = mode === 'document'
+                ? `Please document this code:\n\n${text}`
+                : text;
+
             return await apiService.askClaude(prompt, tokenSource.token);
         });
 
         const formattedResponse = formatResponse(text, response, mode);
-        await createResponsePanel(formattedResponse);
+        const responseEditor = await createResponsePanel(formattedResponse);
+
+        if (responseEditor) {
+            // Ensure the response panel stays active
+            await ensureResponsePanelActive(responseEditor, {
+                maxAttempts: 3,
+                delayMs: 100
+            });
+        }
+
     } catch (error) {
         if (error instanceof vscode.CancellationError) {
             vscode.window.showInformationMessage('Request cancelled');
+            return;
+        }
+        if (error instanceof EditorTimeoutError) {
+            vscode.window.showErrorMessage('Editor window management issue. Please try again.');
             return;
         }
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -125,7 +135,6 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
         console.error('Error handling Claude request:', error);
     } finally {
         statusBarItem.dispose();
-        tokenSource.dispose();
     }
 }
 
@@ -168,7 +177,7 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
         // Ensure previous commands are disposed and add safety timeout
         await deactivate();
         await new Promise(resolve => setTimeout(resolve, Timeouts.ACTIVATION)); // Wait for cleanup
-        
+
         // Initialize API service
         apiService = service || new DefaultClaudeApiService();
 
@@ -180,11 +189,11 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
             }),
 
             // Main commands
-            vscode.commands.registerCommand('claude-vscode.askClaude', () => 
+            vscode.commands.registerCommand('claude-vscode.askClaude', () =>
                 handleClaudeRequest('general')
             ),
 
-            vscode.commands.registerCommand('claude-vscode.documentCode', () => 
+            vscode.commands.registerCommand('claude-vscode.documentCode', () =>
                 handleClaudeRequest('document')
             )
         ];
