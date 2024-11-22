@@ -2,15 +2,13 @@
 import * as vscode from 'vscode';
 import { ClaudeApiService, DefaultClaudeApiService } from './services/claude-api';
 import { ClaudeResponse } from './api';
+import { Timeouts } from './config';
+import { waitForExtensionReady, ensureAllEditorsClosed, unregisterCommands } from './utils';
 
 // Global state management
 let registeredCommands: vscode.Disposable[] = [];
 let apiService: ClaudeApiService;
 let cancellationTokenSource: vscode.CancellationTokenSource | undefined;
-
-// Constants
-const CLEANUP_TIMEOUT = 1000; // 1 second
-const STATUS_BAR_PRIORITY = 100;
 
 /**
  * Formats the response from Claude into a markdown document
@@ -89,7 +87,7 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
 
     const statusBarItem = vscode.window.createStatusBarItem(
         vscode.StatusBarAlignment.Right,
-        STATUS_BAR_PRIORITY
+        Timeouts.STATUS_BAR_PRIORITY
     );
     statusBarItem.text = "$(sync~spin) Asking Claude...";
     statusBarItem.show();
@@ -132,7 +130,7 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
 export async function cleanupPanelsAndEditors(): Promise<void> {
     try {
         await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await new Promise(resolve => setTimeout(resolve, CLEANUP_TIMEOUT));
+        await new Promise(resolve => setTimeout(resolve, Timeouts.CLEANUP));
 
         // Remove activePanels cleanup code, just keep tab cleanup
         vscode.window.tabGroups.all.forEach(group => {
@@ -162,46 +160,41 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
     console.log('Claude extension activating...');
 
     try {
-        // Cleanup any existing commands first
-        registeredCommands.forEach(cmd => {
-            try {
-                cmd.dispose();
-            } catch (error) {
-                console.warn('Error disposing command:', error);
-            }
-        });
-        registeredCommands = [];
-
+        // Ensure previous commands are disposed and add safety timeout
+        await deactivate();
+        await new Promise(resolve => setTimeout(resolve, Timeouts.ACTIVATION)); // Wait for cleanup
+        
+        // Initialize API service
         apiService = service || new DefaultClaudeApiService();
 
-        // Support command for donations
-        const supportCommand = vscode.commands.registerCommand('claude-vscode.support', () => {
-            vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
-        });
+        // Register commands after cleanup
+        const commands = [
+            // Support command for donations
+            vscode.commands.registerCommand('claude-vscode.support', () => {
+                vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
+            }),
 
-        // Main commands
-        const askCommand = vscode.commands.registerCommand(
-            'claude-vscode.askClaude',
-            () => handleClaudeRequest('general')
-        );
+            // Main commands
+            vscode.commands.registerCommand('claude-vscode.askClaude', () => 
+                handleClaudeRequest('general')
+            ),
 
-        const documentCommand = vscode.commands.registerCommand(
-            'claude-vscode.documentCode',
-            () => handleClaudeRequest('document')
-        );
+            vscode.commands.registerCommand('claude-vscode.documentCode', () => 
+                handleClaudeRequest('document')
+            )
+        ];
 
-        // Store commands
-        registeredCommands = [supportCommand, askCommand, documentCommand];
+        // Store commands and add to subscriptions
+        registeredCommands = commands;
+        context.subscriptions.push(...commands);
 
-        // Add to subscriptions
-        context.subscriptions.push(...registeredCommands);
-
-        console.log('Claude extension activated');
-
-        // Return activation promise
+        console.log('Claude extension activated successfully');
         return Promise.resolve();
+
     } catch (error) {
         console.error('Error during activation:', error);
+        // Ensure cleanup on activation failure
+        await deactivate();
         throw error;
     }
 }
@@ -213,16 +206,24 @@ export async function deactivate() {
     console.log('Claude extension deactivating...');
 
     try {
-        registeredCommands.forEach(cmd => cmd.dispose());
+        // Dispose all registered commands
+        for (const cmd of registeredCommands) {
+            try {
+                cmd.dispose();
+            } catch (err) {
+                console.warn('Error disposing command:', err);
+            }
+        }
         registeredCommands = [];
 
+        // Clean up panels and editors
         await cleanupPanelsAndEditors();
 
-        console.log('Claude extension deactivated');
+        console.log('Claude extension deactivated successfully');
     } catch (error) {
         console.error('Error during deactivation:', error);
         throw error;
     } finally {
-        console.log('Thank you for supporting the Open Source!')
+        console.log('Thank you for supporting the Open Source!');
     }
 }

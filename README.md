@@ -99,6 +99,6 @@ Please consider learning more about their mission and supporting their fundraise
 
 ## Call for Feature Requests
 
-What's working? What's not? What are your other painpoints in your AI workflow? Want to chat about fresh baked lemon cupcakes? Don't be shy. [Open an Issue!](https://github.com/username/repository/issues/new)
+What's working? What's not? What are your other painpoints in your AI workflow? Want to chat about fresh baked lemon cupcakes? Don't be shy. [Open an Issue!](https://github.com/talamantez/claude-vscode/issues/new)
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/conscious.robot)

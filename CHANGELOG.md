@@ -3,9 +3,14 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.8] - 2024-11-18
+
+## [1.1.9] - 2024-11-21
 ### Changed
- - Added Cancel Button
+ - Fixed broken link in readme
+
+## [1.1.8] - 2024-11-21
+### Changed
+ - Added Cancel Button, updated test suite
 
 ## [1.1.7] - 2024-11-18
 ### Changed
