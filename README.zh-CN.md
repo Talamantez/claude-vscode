@@ -1,65 +1,65 @@
-# Claude AI 助手 VSCode 扩展
+# Claude AI 助手 VSCode 插件
 
-> **翻译说明**: 本文档是由机器翻译生成的初版中文翻译。作为开源项目，我们非常欢迎社区帮助改进翻译质量！如果您发现任何翻译不准确或需要改进的地方，请随时:
-> 1. 在 GitHub 上提交 Issue 或 Pull Request
-> 2. 通过 GitHub Discussions 分享您的建议
-> 3. 直接联系作者改进翻译
+> **翻译说明**: 本文档为社区维护的中文翻译版本。为确保文档质量，我们诚邀您参与改进：
+> 1. 通过 GitHub Issue 反馈问题
+> 2. 在 GitHub Discussions 提出建议
+> 3. 直接提交 Pull Request 帮助改进
 >
-> 您的反馈对帮助改善中文用户体验非常重要！
+> 感谢您对提升中文技术文档质量的贡献！
 
 ---
 
-将 Claude 的强大功能直接引入您的开发工作流程。这个扩展让您无需离开 VSCode 就能与 Claude AI 交互，帮助您更高效地编写、记录和理解代码。
+在 VSCode 中直接体验 Claude 的智能辅助功能。本插件让您能够在开发过程中无缝对话 Claude AI，提升代码编写、注释生成和代码理解的效率。
 
-## 主要特点
+## 核心功能
 
-* 询问 Claude：选择任何文本，右键点击即可获得 AI 即时帮助
-* 代码文档：自动为您的代码生成文档
-* 上下文感知：可以包含之前回答的内容作为上下文
-* Markdown 输出：响应格式清晰易读
+* 智能对话：选中任意代码或文本，右键即可向 Claude 提问
+* 注释生成：一键生成规范的代码注释和文档
+* 上下文理解：支持多轮对话，保持对话连贯性
+* Markdown 渲染：回复内容结构清晰，易于阅读理解
 
-## 快速开始
+## 使用入门
 
-1. 安装扩展
-2. 设置您的 Claude API 密钥（见下文）
-3. 选择文本，右键点击，选择 Claude AI，然后选择：
-   * `询问 Claude` 获取常规帮助
-   * `生成代码文档` 进行自动文档生成
+1. 安装插件
+2. 配置 Claude API 密钥（详见下文）
+3. 选中文本，点击右键菜单，选择 Claude AI 后可以：
+   * 选择`询问 Claude`获取智能解答
+   * 选择`生成代码注释`自动创建文档
 
-就是这么简单！
+操作简单，即刻上手！
 
 ## API 密钥设置
 
 ### 获取密钥
-1. 注册 Anthropic 账户
-2. 进入 API 设置
-3. 生成新的 API 密钥
-4. 确保安全 - 切勿分享或提交密钥
+1. 注册 Anthropic 开发者账号
+2. 访问 API 管理页面
+3. 创建新的 API 密钥
+4. 请妥善保管密钥，切勿泄露或上传
 
-### 添加密钥
+### 配置密钥
 
-方法 1 - VS Code 设置（推荐）：
-1. 打开设置（Ctrl/Cmd + ,）
+方式一 - VS Code 设置（推荐）：
+1. 打开设置面板（Ctrl/Cmd + ,）
 2. 搜索 "Claude VS Code"
-3. 输入您的 API 密钥
-4. VS Code 会安全存储密钥
+3. 填入您的 API 密钥
+4. VS Code 将安全加密存储密钥
 
-方法 2 - 环境变量：
-* 在环境中设置 CLAUDE_API_KEY
-* 确保安全的变量管理
+方式二 - 环境变量：
+* 在系统环境变量中设置 CLAUDE_API_KEY
+* 确保使用安全的环境变量管理方式
 
-## 中国地区特定配置
+## 中国大陆地区配置
 
 ### 区域设置
-1. 在 VS Code 设置中选择 "CN" 区域
-2. 系统将自动使用中国区域优化的端点
+1. 在 VS Code 设置中选择"CN"区域
+2. 系统将自动切换至中国区域优化服务器
 
-### 代理设置（如需要）
-在 VS Code 设置中配置：
+### 代理配置（可选）
+在 VS Code 设置中添加：
 ```json
 {
     "claude-vscode.proxySettings": {
-        "host": "您的代理服务器",
+        "host": "代理服务器地址",
         "port": 端口号,
         "auth": {
             "username": "用户名",
@@ -69,47 +69,47 @@
 }
 ```
 
-## 安全第一
+## 安全保障
 
-* 密钥存储在 VS Code 的安全存储中
-* 仅 HTTPS API 通信
-* 不存储或记录数据
-* 直接的 Claude API 集成
-* 您完全掌控您的密钥
+* API 密钥经 VS Code 安全加密存储
+* 采用 HTTPS 加密通信
+* 不存储任何对话数据
+* 直连 Claude API，无中间服务器
+* 用户完全控制密钥权限
 
 ## 模型选择
 
-在 VS Code 设置中选择您的模型：
+通过 VS Code 设置选择模型：
 * claude-3-opus-20240229（默认）
 * claude-3-sonnet-20240229
 
 ## 系统要求
 
-* VS Code 1.80.0+
-* 互联网连接
+* VS Code 1.80.0 或更高版本
+* 稳定的网络连接
 * Claude API 密钥
 
 ## 问题反馈
 
-遇到问题或有新功能建议？欢迎在我们的 [GitHub 仓库](https://github.com/talamantez/claude-vscode) 提出问题！
+遇到问题或有功能建议？欢迎在我们的 [GitHub 仓库](https://github.com/talamantez/claude-vscode) 提交 Issue！
 
-## 帮助改进翻译
+## 参与翻译
 
-这个中文文档的质量对我们来说非常重要！如果您发现：
-- 翻译不准确或不自然的地方
+优质的中文文档对用户体验至关重要。如果您发现：
+- 翻译不够准确或自然
 - 技术术语使用不当
-- 更好的表达方式
-- 任何其他可以改进的地方
+- 更优的表达方式
+- 其他需要改进之处
 
-请通过以下方式帮助我们改进：
-1. 在 [GitHub Issues](https://github.com/talamantez/claude-vscode/issues/new) 上提交问题，标签使用 "translation"
-2. 直接在 [GitHub](https://github.com/talamantez/claude-vscode) 上提交 Pull Request
-3. 在 Discussions 中分享您的想法
+欢迎通过以下方式参与改进：
+1. 提交 [GitHub Issue](https://github.com/talamantez/claude-vscode/issues/new)，标记为"translation"
+2. 直接提交 [Pull Request](https://github.com/talamantez/claude-vscode)
+3. 在 Discussions 中分享建议
 
-每一个建议都会帮助我们为中文开发者提供更好的体验！感谢您的参与！
+您的每一条建议都将帮助我们为中文开发者提供更好的使用体验！
 
 ---
 
 由 [Conscious Robot](https://conscious-robot.com) 开发
 
-_注：此扩展已针对中国地区进行优化，包括本地化的 API 端点和完整的代理支持。_
+_注：本插件已针对中国大陆地区优化，包括本地化服务器和完整的代理支持。_
