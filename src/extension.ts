@@ -3,12 +3,12 @@ import * as vscode from 'vscode';
 import { ClaudeApiService, DefaultClaudeApiService } from './services/claude-api';
 import { ClaudeResponse } from './api';
 import { Timeouts } from './config';
-import { waitForActiveEditor, ensureResponsePanelActive, EditorTimeoutError } from './editor-utils';
+import { waitForExtensionReady } from './utils';
 
 // Global state management
+let isCleaningUp = false;
 let registeredCommands: vscode.Disposable[] = [];
 let apiService: ClaudeApiService;
-let cancellationTokenSource: vscode.CancellationTokenSource | undefined;
 
 /**
  * Formats the response from Claude into a markdown document
@@ -42,30 +42,47 @@ function formatResponse(prompt: string, response: ClaudeResponse, mode: 'general
 /**
  * Creates and manages a response panel
  */
-export async function createResponsePanel(content: string): Promise<vscode.TextEditor | undefined> {
+export async function createResponsePanel(content: string, sourceEditor?: vscode.TextEditor): Promise<vscode.TextEditor | undefined> {
     try {
+        // Store the current source editor state
+        const sourceDocument = sourceEditor?.document;
+        const sourceSelection = sourceEditor?.selection;
+        const sourceViewColumn = sourceEditor?.viewColumn;
+
+        // Create the response document
         const doc = await vscode.workspace.openTextDocument({
             content,
             language: 'markdown'
         });
 
-        const editor = await vscode.window.showTextDocument(doc, {
-            preview: false,
-            viewColumn: vscode.ViewColumn.Beside
+        // Determine view column - always try to use a new column to the right
+        const targetViewColumn = sourceViewColumn
+            ? sourceViewColumn + 1 as vscode.ViewColumn
+            : vscode.ViewColumn.Two;
+
+        // Show the new document
+        const responseEditor = await vscode.window.showTextDocument(doc, {
+            viewColumn: targetViewColumn,
+            preserveFocus: true,
+            preview: false // Make it a permanent editor to avoid VS Code's preview behavior
         });
 
-        // Safely toggle readonly
-        const commands = await vscode.commands.getCommands();
-        if (commands.includes('workbench.action.toggleEditorReadonly')) {
-            await vscode.commands.executeCommand('workbench.action.toggleEditorReadonly');
+        // If we somehow lost the source editor, restore it
+        if (sourceDocument && !vscode.window.visibleTextEditors.some(e => e.document === sourceDocument)) {
+            await vscode.window.showTextDocument(sourceDocument, {
+                viewColumn: sourceViewColumn,
+                selection: sourceSelection,
+                preserveFocus: false
+            });
         }
 
-        return editor;
+        return responseEditor;
     } catch (error) {
         console.error('Error creating response panel:', error);
         throw error;
     }
 }
+
 
 /**
  * Handles Claude API requests
@@ -79,11 +96,11 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
     statusBarItem.show();
 
     try {
-        // Wait for active editor with retries
-        const editor = await waitForActiveEditor({
-            maxAttempts: 5,
-            delayMs: 200
-        });
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showInformationMessage('Please open a file and select some text first');
+            return;
+        }
 
         const selection = editor.selection;
         const text = editor.document.getText(selection);
@@ -111,23 +128,11 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
         });
 
         const formattedResponse = formatResponse(text, response, mode);
-        const responseEditor = await createResponsePanel(formattedResponse);
-
-        if (responseEditor) {
-            // Ensure the response panel stays active
-            await ensureResponsePanelActive(responseEditor, {
-                maxAttempts: 3,
-                delayMs: 100
-            });
-        }
+        await createResponsePanel(formattedResponse, editor);
 
     } catch (error) {
         if (error instanceof vscode.CancellationError) {
             vscode.window.showInformationMessage('Request cancelled');
-            return;
-        }
-        if (error instanceof EditorTimeoutError) {
-            vscode.window.showErrorMessage('Editor window management issue. Please try again.');
             return;
         }
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -141,29 +146,46 @@ async function handleClaudeRequest(mode: 'general' | 'document') {
 /**
  * Cleans up all panels and editors
  */
-export async function cleanupPanelsAndEditors(): Promise<void> {
+export async function cleanupPanelsAndEditors(excludeEditor?: vscode.TextEditor): Promise<void> {
+    if (isCleaningUp) {
+        console.log('Cleanup already in progress, skipping');
+        return;
+    }
+
+    isCleaningUp = true;
     try {
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
-        await new Promise(resolve => setTimeout(resolve, Timeouts.CLEANUP));
+        // Get all editors except the one to exclude
+        const editorsToClose = vscode.window.visibleTextEditors.filter(editor =>
+            editor !== excludeEditor &&
+            editor.document.uri !== excludeEditor?.document.uri
+        );
 
-        // Remove activePanels cleanup code, just keep tab cleanup
-        vscode.window.tabGroups.all.forEach(group => {
-            group.tabs.forEach(tab => {
-                try {
-                    const input = tab.input;
-                    if (input && typeof input === 'object' && 'dispose' in input) {
-                        (input as { dispose: () => void }).dispose();
-                    }
-                } catch (error) {
-                    console.error('Error disposing tab:', error);
-                }
+        // Close each editor individually
+        for (const editor of editorsToClose) {
+            try {
+                await vscode.window.showTextDocument(editor.document);
+                await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            } catch (error) {
+                console.warn('Error closing editor:', error);
+                // Continue with other editors even if one fails
+            }
+        }
+
+        // Restore focus to excluded editor if it exists
+        if (excludeEditor && !excludeEditor.document.isClosed) {
+            await vscode.window.showTextDocument(excludeEditor.document, {
+                viewColumn: excludeEditor.viewColumn,
+                selection: excludeEditor.selection,
+                preserveFocus: false
             });
-        });
+        }
 
-        await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+        await waitForExtensionReady(Timeouts.CLEANUP);
     } catch (error) {
         console.error('Error during cleanup:', error);
         throw error;
+    } finally {
+        isCleaningUp = false;
     }
 }
 
@@ -174,41 +196,28 @@ export async function activate(context: vscode.ExtensionContext, service?: Claud
     console.log('Claude extension activating...');
 
     try {
-        // Ensure previous commands are disposed and add safety timeout
-        await deactivate();
-        await new Promise(resolve => setTimeout(resolve, Timeouts.ACTIVATION)); // Wait for cleanup
-
         // Initialize API service
         apiService = service || new DefaultClaudeApiService();
 
-        // Register commands after cleanup
+        // Simply register new commands without any cleanup
         const commands = [
-            // Support command for donations
             vscode.commands.registerCommand('claude-vscode.support', () => {
-                vscode.env.openExternal(vscode.Uri.parse('https://buy.stripe.com/aEUcQc7Cb3VE22I3cc'));
+                vscode.env.openExternal(vscode.Uri.parse('https://buymeacoffee.com/conscious.robot'));
             }),
-
-            // Main commands
             vscode.commands.registerCommand('claude-vscode.askClaude', () =>
                 handleClaudeRequest('general')
             ),
-
             vscode.commands.registerCommand('claude-vscode.documentCode', () =>
                 handleClaudeRequest('document')
             )
         ];
 
-        // Store commands and add to subscriptions
-        registeredCommands = commands;
+        // Add to subscriptions
         context.subscriptions.push(...commands);
-
         console.log('Claude extension activated successfully');
-        return Promise.resolve();
 
     } catch (error) {
         console.error('Error during activation:', error);
-        // Ensure cleanup on activation failure
-        await deactivate();
         throw error;
     }
 }
@@ -220,24 +229,21 @@ export async function deactivate() {
     console.log('Claude extension deactivating...');
 
     try {
-        // Dispose all registered commands
-        for (const cmd of registeredCommands) {
+        // Dispose commands without forcing unregistration
+        registeredCommands.forEach(cmd => {
             try {
                 cmd.dispose();
             } catch (err) {
-                console.warn('Error disposing command:', err);
+                // Ignore disposal errors
             }
-        }
+        });
         registeredCommands = [];
-
-        // Clean up panels and editors
-        await cleanupPanelsAndEditors();
 
         console.log('Claude extension deactivated successfully');
     } catch (error) {
         console.error('Error during deactivation:', error);
         throw error;
     } finally {
-        console.log('Thank you for supporting the Open Source!');
+        console.log('Thank you for supporting Open Source!');
     }
 }

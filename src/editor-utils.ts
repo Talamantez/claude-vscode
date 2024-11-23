@@ -24,26 +24,11 @@ export class EditorTimeoutError extends Error {
  * Waits for the active editor with retries
  */
 export async function waitForActiveEditor(options: EditorRetryOptions = {}): Promise<vscode.TextEditor> {
-    const opts = { ...DEFAULT_OPTIONS, ...options };
-    const startTime = Date.now();
-
-    for (let attempt = 1; attempt <= opts.maxAttempts!; attempt++) {
-        const editor = vscode.window.activeTextEditor;
-        if (editor) {
-            return editor;
-        }
-
-        if (Date.now() - startTime > opts.timeout!) {
-            throw new EditorTimeoutError('Timed out waiting for active editor');
-        }
-
-        // Log retry attempts in debug mode
-        console.log(`Waiting for active editor... Attempt ${attempt}/${opts.maxAttempts}`);
-
-        await new Promise(resolve => setTimeout(resolve, opts.delayMs));
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        throw new Error('No active editor found');
     }
-
-    throw new Error('No active editor found after retries');
+    return editor;
 }
 
 /**
