@@ -1,12 +1,23 @@
 {
   "name": "claude-vscode-assistant",
   "displayName": "Claude AI Assistant",
-  "version": "1.1.13",
-  "description": "Claude AI assistant for Visual Studio Code",
+  "version": "2.0.0",
+  "description": "Claude AI assistant for Visual Studio Code - Seamlessly integrate Claude's capabilities into your development workflow",
   "publisher": "conscious-robot",
+  "pricing": "Trial",
+  "preview": false,
   "repository": {
     "type": "git",
     "url": "https://github.com/talamantez/claude-vscode"
+  },
+  "license": "SEE LICENSE IN LICENSE.md",
+  "qna": "https://github.com/talamantez/claude-vscode/issues",
+  "bugs": {
+    "url": "https://github.com/talamantez/claude-vscode/issues"
+  },
+  "galleryBanner": {
+    "color": "#2F3437",
+    "theme": "dark"
   },
   "engines": {
     "vscode": "^1.95.0"
@@ -21,7 +32,9 @@
     "ai",
     "assistant",
     "anthropic",
-    "code"
+    "code",
+    "documentation",
+    "productivity"
   ],
   "activationEvents": [
     "onCommand:claude-vscode.askClaude",
@@ -40,11 +53,6 @@
         "command": "claude-vscode.documentCode",
         "title": "Document Code with Claude",
         "icon": "$(book)"
-      },
-      {
-        "command": "claude-vscode.support",
-        "title": "Support Open Source 🥓",
-        "category": "Claude AI"
       }
     ],
     "menus": {
@@ -62,10 +70,6 @@
         {
           "command": "claude-vscode.documentCode",
           "group": "claude@2"
-        },
-        {
-          "command": "claude-vscode.support",
-          "group": "Claude AI"
         }
       ]
     },
