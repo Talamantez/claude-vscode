@@ -28,7 +28,6 @@ export function getConfiguration(): Configuration {
 export async function unregisterCommands(): Promise<void> {
     const allCommands = await vscode.commands.getCommands();
     const ourCommands = [
-        'claude-vscode.support',
         'claude-vscode.askClaude',
         'claude-vscode.documentCode'
     ];
@@ -53,14 +52,14 @@ export async function unregisterCommands(): Promise<void> {
         if (remainingCommands.includes(cmd)) {
             try {
                 // Force dispose any existing command registration
-                const existingDisposable = vscode.commands.registerCommand(cmd, () => {});
+                const existingDisposable = vscode.commands.registerCommand(cmd, () => { });
                 existingDisposable.dispose();
             } catch (err) {
                 console.warn(`Failed force cleanup of command ${cmd}:`, err);
             }
         }
     }
-    
+
     // Final wait to ensure cleanup
     await waitForExtensionReady(Timeouts.ACTIVATION);
 }

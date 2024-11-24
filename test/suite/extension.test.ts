@@ -184,11 +184,6 @@ suite('Claude Extension Test Suite', () => {
         testExtension = new ClaudeExtension(mockContext, mockApiService);
         await testExtension.activate();
 
-        assert.ok(
-            registeredCommands.has('claude-vscode.support'),
-            'Support command should be registered'
-        );
-
         assert.strictEqual(
             mockContext.subscriptions.length > 0,
             true,

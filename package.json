@@ -36,10 +36,7 @@
     "documentation",
     "productivity"
   ],
-  "activationEvents": [
-    "onCommand:claude-vscode.askClaude",
-    "onCommand:claude-vscode.documentCode"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "icon": "icon.png",
   "contributes": {
@@ -96,12 +93,12 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run verify",
     "build": "tsc -p ./tsconfig.json && esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "verify": "pnpm run build && pnpm run test",
+    "vscode:prepublish": "pnpm run verify",
     "watch": "node esbuild.js --watch",
     "package": "pnpm run verify && vsce package",
     "publish": "pnpm run verify && vsce publish",
-    "verify": "pnpm run build && pnpm run test",
     "pretest": "pnpm run build && pnpm run compile-tests",
     "test": "xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' node --force-node-api-uncaught-exceptions-policy=true ./out/test/runTest.js",
     "compile-tests": "tsc -p ./tsconfig.test.json",

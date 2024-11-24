@@ -5,12 +5,14 @@ import { ClaudeResponse } from './api';
 import { ResponsePanelManager } from './ResponsePanelManager';
 import { CommandManager } from './CommandManager';
 import { Timeouts } from './config';
+import { LicenseService } from './services/licensce-service';
 
 export class ClaudeExtension {
     private readonly _disposables: vscode.Disposable[] = [];
     private readonly _apiService: ClaudeApiService;
     private readonly _panelManager: ResponsePanelManager;
     private readonly _commandManager: CommandManager;
+    private readonly _licenseService: LicenseService;
 
     constructor(
         private readonly _context: vscode.ExtensionContext,
@@ -19,21 +21,18 @@ export class ClaudeExtension {
         this._apiService = apiService || new DefaultClaudeApiService();
         this._panelManager = new ResponsePanelManager(_context);
         this._commandManager = new CommandManager(_context);
+        this._licenseService = new LicenseService(_context);
 
         // Track these managers for disposal
         this._disposables.push(this._panelManager);
         this._disposables.push(this._commandManager);
     }
-
     public async activate(): Promise<void> {
         // Ensure clean state
         await this.dispose();
 
         // Register commands
         await this._commandManager.registerCommands({
-            'claude-vscode.support': () => {
-                vscode.env.openExternal(vscode.Uri.parse('https://buymeacoffee.com/conscious.robot'));
-            },
             'claude-vscode.askClaude': () => this._handleClaudeRequest('general'),
             'claude-vscode.documentCode': () => this._handleClaudeRequest('document')
         });
