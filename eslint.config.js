@@ -11,8 +11,7 @@ export default [
             'dist/**',
             'node_modules/**',
             '.vscode-test/**',
-            'examples/**',
-            'deno/**'
+            'examples/**'
         ]
     },
     {
