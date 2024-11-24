@@ -121,5 +121,15 @@
     "sinon": "^19.0.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
-  }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "LICENSE.md",
+    "PRIVACY.md",
+    "EULA.md",
+    "README.md",
+    "icon.png",
+    "logo.svg"
+  ]
 }
