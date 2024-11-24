@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 API Endpoint 400 error
 ### Changed
 Update API Test Suite
+### Added
+ 🎉 Note for Early Adopters 🎉
+
+As a thank you for your early support you'll continue to have full access without any subscription required! 🎉
+Not affected if you installed after v2.0. 
 
 ## [2.0.1] - 2024-11-24
 ### Fixed
