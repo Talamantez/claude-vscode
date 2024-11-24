@@ -2,6 +2,9 @@
 
 The reliable, polished VS Code extension for Claude AI integration. Ask questions, generate documentation, and get AI assistance - all without leaving your editor.
 
+## It Just Works
+No complex setup. No unexpected behaviors. Select text, right-click, and get your response in a clean, properly-managed window. Every time.
+
 ## Why Pro?
 - **Rock-solid Stability**: Extensively tested window management, reliable response handling, and proper state preservation
 - **Clean Interface**: Responses appear exactly where they should, every time
@@ -19,9 +22,6 @@ The reliable, polished VS Code extension for Claude AI integration. Ask question
 - ⚡ Proper cancellation support
 - 🛟 Priority support for Pro users
 - 🔮 More exciting features coming in v2.x series!
-
-## It Just Works
-No complex setup. No unexpected behaviors. Select text, right-click, and get your response in a clean, properly-managed window. Every time.
 
 ## Getting Started
 1. Install the extension
