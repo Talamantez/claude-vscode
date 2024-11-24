@@ -8,6 +8,10 @@ The reliable, polished VS Code extension for Claude AI integration. Ask question
 - **Thoughtful Design**: Cancel operations cleanly, preserve your source code state, no unwanted prompts
 - **7-Day Free Trial**: Experience the reliability yourself
 
+## Coming Soon in v2.x 🚀
+- **[Flash-Repo](https://github.com/Talamantez/flash-repo-vscode)**: Share ALL the files you need and ONLY the files you need with Claude AI
+- **[Flash-Hydrate](https://github.com/Talamantez/flash-hydrate-vscode)**: Hydrate Claude AI responses into Code Repositories
+
 ## Core Features
 - 🎯 Ask Claude anything from your editor
 - 📚 Generate code documentation
@@ -15,14 +19,6 @@ The reliable, polished VS Code extension for Claude AI integration. Ask question
 - ⚡ Proper cancellation support
 - 🛟 Priority support for Pro users
 - 🔮 More exciting features coming in v2.x series!
-
-
-## Core Features
-- 🎯 Ask Claude anything from your editor
-- 📚 Generate code documentation
-- 💫 Smart response window management
-- ⚡ Proper cancellation support
-- 🛟 Priority support for Pro users
 
 ## It Just Works
 No complex setup. No unexpected behaviors. Select text, right-click, and get your response in a clean, properly-managed window. Every time.
