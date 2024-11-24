@@ -100,7 +100,7 @@ export class LicenseService {
                 ).then(selection => {
                     if (selection === 'Purchase Now') {
                         vscode.env.openExternal(vscode.Uri.parse(
-                            'https://marketplace.visualstudio.com/items?itemName=conscious-robot.claude-vscode'
+                            'https://marketplace.visualstudio.com/items?itemName=conscious-robot.claude-vscode-assistant'
                         ));
                     }
                 });
@@ -111,7 +111,7 @@ export class LicenseService {
                 ).then(selection => {
                     if (selection === 'Purchase Now') {
                         vscode.env.openExternal(vscode.Uri.parse(
-                            'https://marketplace.visualstudio.com/items?itemName=conscious-robot.claude-vscode'
+                            'https://marketplace.visualstudio.com/items?itemName=conscious-robot.claude-vscode-assistant'
                         ));
                     }
                 });
