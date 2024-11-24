@@ -34,7 +34,15 @@ export class LicenseService {
         }
 
         try {
-            return JSON.parse(licenseData) as LicenseInfo;
+            const parsed = JSON.parse(licenseData);
+            // Convert date strings back to Date objects
+            if (parsed.trialEndsAt) {
+                parsed.trialEndsAt = new Date(parsed.trialEndsAt);
+            }
+            if (parsed.purchaseDate) {
+                parsed.purchaseDate = new Date(parsed.purchaseDate);
+            }
+            return parsed as LicenseInfo;
         } catch {
             return undefined;
         }
@@ -82,10 +90,8 @@ export class LicenseService {
             return;
         }
 
-        if (license.isTrial) {
-            const daysLeft = license.trialEndsAt ?
-                Math.max(0, Math.ceil((license.trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) :
-                0;
+        if (license.isTrial && license.trialEndsAt) {
+            const daysLeft = Math.max(0, Math.ceil((license.trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
             if (daysLeft > 0) {
                 vscode.window.showInformationMessage(

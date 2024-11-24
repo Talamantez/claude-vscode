@@ -29,6 +29,21 @@ No complex setup. No unexpected behaviors. Select text, right-click, and get you
 3. Select code or text
 4. Right-click and choose "Ask Claude" or "Document Code"
 
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `Ask Claude` | Send selected text to Claude for a response |
+| `Document Code` | Generate documentation for selected code |
+
+## Settings
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `claude-vscode.apiKey` | Your Claude API key | `""` |
+| `claude-vscode.model` | Claude model to use | `"claude-3-opus-20240229"` |
+
+
 ## Pricing
 - One-time purchase: $9.99
 - 7-day free trial for new users

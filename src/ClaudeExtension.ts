@@ -5,7 +5,7 @@ import { ClaudeResponse } from './api';
 import { ResponsePanelManager } from './ResponsePanelManager';
 import { CommandManager } from './CommandManager';
 import { Timeouts } from './config';
-import { LicenseService } from './services/licensce-service';
+import { LicenseService } from './services/license-service';
 
 export class ClaudeExtension {
     private readonly _disposables: vscode.Disposable[] = [];
@@ -31,10 +31,28 @@ export class ClaudeExtension {
         // Ensure clean state
         await this.dispose();
 
+        // Initialize license
+        await this._licenseService.initializeLicense();
+        await this._licenseService.showLicenseStatus();
+
         // Register commands
         await this._commandManager.registerCommands({
-            'claude-vscode.askClaude': () => this._handleClaudeRequest('general'),
-            'claude-vscode.documentCode': () => this._handleClaudeRequest('document')
+            'claude-vscode.askClaude': async () => {
+                const isLicenseValid = await this._licenseService.validateLicense();
+                if (!isLicenseValid) {
+                    await this._licenseService.showLicenseStatus();
+                    return;
+                }
+                await this._handleClaudeRequest('general');
+            },
+            'claude-vscode.documentCode': async () => {
+                const isLicenseValid = await this._licenseService.validateLicense();
+                if (!isLicenseValid) {
+                    await this._licenseService.showLicenseStatus();
+                    return;
+                }
+                await this._handleClaudeRequest('document');
+            }
         });
     }
 
