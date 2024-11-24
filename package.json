@@ -1,7 +1,7 @@
 {
   "name": "claude-vscode-assistant",
   "displayName": "Claude AI Assistant",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Claude AI assistant for Visual Studio Code - Seamlessly integrate Claude's capabilities into your development workflow",
   "publisher": "conscious-robot",
   "pricing": "Trial",

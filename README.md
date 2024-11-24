@@ -1,3 +1,13 @@
+# 🎉 Note for Early Adopters 🎉
+
+If you installed this extension before v2.0, please simply upgrade to continue using at no cost. Thank you for your support! The update will happen automatically through VSCode, or you can trigger it manually.
+
+_Not affected if you installed after v2.0._
+
+---
+
+
+
 # Claude AI Assistant Pro
 
 The reliable, polished VS Code extension for Claude AI integration. Ask questions, generate documentation, and get AI assistance - all without leaving your editor.
