@@ -2,6 +2,11 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.0.0] - 2024-11-24
+### Fixed
+Purchase link
+
 ## [2.0.0] - 2024-11-24
 ### 🚀 Going Pro!
 After a few intense weeks of development and amazing community support, we're taking the next step with Claude AI Assistant Pro.
@@ -139,20 +144,3 @@ After a few intense weeks of development and amazing community support, we're ta
 - Markdown-formatted responses
 - Side-by-side response view
 - Basic configuration options
-
-[2.0.0]: https://github.com/talamantez/claude-vscode/compare/v1.1.13...v2.0.0
-[1.1.13]: https://github.com/talamantez/claude-vscode/compare/v1.1.12...v1.1.13
-[1.1.12]: https://github.com/talamantez/claude-vscode/compare/v1.1.11...v1.1.12
-[1.1.11]: https://github.com/talamantez/claude-vscode/compare/v1.1.10...v1.1.11
-[1.1.10]: https://github.com/talamantez/claude-vscode/compare/v1.1.9...v1.1.10
-[1.1.9]: https://github.com/talamantez/claude-vscode/compare/v1.1.8...v1.1.9
-[1.1.8]: https://github.com/talamantez/claude-vscode/compare/v1.1.7...v1.1.8
-[1.1.7]: https://github.com/talamantez/claude-vscode/compare/v1.1.6...v1.1.7
-[1.1.6]: https://github.com/talamantez/claude-vscode/compare/v1.1.4...v1.1.6
-[1.1.4]: https://github.com/talamantez/claude-vscode/compare/v1.1.3...v1.1.4
-[1.1.3]: https://github.com/talamantez/claude-vscode/compare/v1.1.2...v1.1.3
-[1.1.2]: https://github.com/talamantez/claude-vscode/compare/v1.1.0...v1.1.2
-[1.1.0]: https://github.com/talamantez/claude-vscode/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/talamantez/claude-vscode/compare/v0.1.1...v1.0.0
-[0.1.1]: https://github.com/talamantez/claude-vscode/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/talamantez/claude-vscode/releases/tag/v0.1.0
