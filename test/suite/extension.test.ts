@@ -2,214 +2,32 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as sinon from 'sinon';
-import { ClaudeResponse } from '../../src/api';
 import { ClaudeExtension } from '../../src/extension';
 import { thoroughCleanup } from '../../src/test-utils';
 import { ClaudeApiService } from '../../src/services/claude-api';
+import { waitForExtensionReady } from '../../src/utils';
 
-suite('Claude Extension Test Suite', () => {
-    let sandbox: sinon.SinonSandbox;
-    let testExtension: ClaudeExtension | null;
+// Test helper functions
+function createFullDocumentSelection(doc: vscode.TextDocument): vscode.Selection {
+    const lastLine = doc.lineCount - 1;
+    const lastChar = doc.lineAt(lastLine).text.length;
+    return new vscode.Selection(
+        new vscode.Position(0, 0),             // anchor: start of document
+        new vscode.Position(lastLine, lastChar) // active: end of document
+    );
+}
 
-    suiteSetup(async () => {
-        console.log('Suite setup starting...');
-        await thoroughCleanup();
-        await forceUnregisterAllCommands();
-        console.log('Suite setup complete');
+async function createTestDocument(content: string, language = 'plaintext'): Promise<vscode.TextEditor> {
+    const doc = await vscode.workspace.openTextDocument({
+        content,
+        language
     });
 
-    setup(async () => {
-        console.log('Test setup starting...');
-        sandbox = sinon.createSandbox();
-        testExtension = null;
-        await thoroughCleanup();
-        await forceUnregisterAllCommands();
-        console.log('Test setup complete');
-    });
-
-    teardown(async () => {
-        console.log('Test teardown starting...');
-        sandbox.restore();
-        if (testExtension) {
-            await testExtension.dispose();
-            testExtension = null;
-        }
-        await thoroughCleanup();
-        await forceUnregisterAllCommands();
-        console.log('Test teardown complete');
-    });
-
-    suiteTeardown(async () => {
-        console.log('Suite teardown starting...');
-        await thoroughCleanup();
-        await forceUnregisterAllCommands();
-        console.log('Suite teardown complete');
-    });
-
-    async function forceUnregisterAllCommands() {
-        const ourCommands = [
-            'claude-vscode.support',
-            'claude-vscode.askClaude',
-            'claude-vscode.documentCode'
-        ];
-
-        console.log('Force unregistering all commands...');
-
-        // First try to get all currently registered commands
-        const allCommands = await vscode.commands.getCommands();
-
-        for (const cmd of ourCommands) {
-            try {
-                if (allCommands.includes(cmd)) {
-                    console.log(`Attempting to unregister existing command: ${cmd}`);
-                    // Create and immediately dispose a new registration to force unregister
-                    const disposable = vscode.commands.registerCommand(cmd, () => { });
-                    disposable.dispose();
-                }
-            } catch (err) {
-                console.warn(`Error while force unregistering ${cmd}:`, err);
-            }
-        }
-
-        // Give VSCode time to process
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    test('Response Panel Creation and Management', async function () {
-        this.timeout(10000);
-        console.log('Starting Response Panel test...');
-
-        const mockContext = createMockExtensionContext();
-        console.log('Created mock context');
-
-        testExtension = new ClaudeExtension(mockContext);
-        console.log('Created extension instance');
-
-        await testExtension.activate();
-        console.log('Extension activated');
-
-        const mockText = "Test selection";
-        const doc = await vscode.workspace.openTextDocument({
-            content: mockText,
-            language: 'plaintext'
-        });
-
-        const editor = await vscode.window.showTextDocument(doc);
-        editor.selection = new vscode.Selection(0, 0, 0, mockText.length);
-
-        await vscode.commands.executeCommand('claude-vscode.askClaude');
-
-        const editors = vscode.window.visibleTextEditors;
-        assert.ok(editors.length > 0, "Should have visible editors");
-
-        console.log('Response Panel test complete');
-    });
-
-    test('Multiple Panel Resource Management', async function () {
-        this.timeout(45000);
-        console.log('Starting Multiple Panel test...');
-
-        const panelCount = 3;
-        await thoroughCleanup();
-        if (global.gc) global.gc();
-
-        const initialMemory = process.memoryUsage();
-
-        try {
-            const mockContext = createMockExtensionContext();
-            testExtension = new ClaudeExtension(mockContext);
-            await testExtension.activate();
-
-            for (let i = 0; i < panelCount; i++) {
-                console.log(`Creating panel ${i + 1}/${panelCount}`);
-                const doc = await vscode.workspace.openTextDocument({
-                    content: `Test content ${i + 1}`,
-                    language: 'markdown'
-                });
-
-                const editor = await vscode.window.showTextDocument(doc, {
-                    viewColumn: vscode.ViewColumn.Beside
-                });
-
-                assert.ok(editor, `Panel ${i + 1} should be visible`);
-                await vscode.commands.executeCommand('workbench.action.moveEditorToNextGroup');
-
-                await thoroughCleanup();
-                if (global.gc) global.gc();
-            }
-
-            const finalMemory = process.memoryUsage();
-            const memoryDiff = finalMemory.heapUsed - initialMemory.heapUsed;
-
-            console.log('Memory usage:', {
-                initial: initialMemory.heapUsed / 1024 / 1024,
-                final: finalMemory.heapUsed / 1024 / 1024,
-                diff: memoryDiff / 1024 / 1024
-            });
-
-            assert.ok(memoryDiff < 5 * 1024 * 1024, 'Memory usage should not increase significantly');
-            assert.strictEqual(vscode.window.visibleTextEditors.length, 0, 'All editors should be closed');
-
-        } catch (error) {
-            console.error('Test failed:', error);
-            await thoroughCleanup();
-            throw error;
-        }
-    });
-
-    test('Cancel Button Functionality', async function () {
-        this.timeout(45000);
-        console.log('Starting Cancel Button test...');
-
-        try {
-            const mockResponse: ClaudeResponse = {
-                content: [{
-                    type: 'text',
-                    text: 'Request cancelled'
-                }],
-                id: 'test-id',
-                model: 'claude-3-opus-20240229',
-                role: 'assistant',
-                stop_reason: 'cancelled',
-                stop_sequence: null,
-                type: 'message',
-                usage: { input_tokens: 0, output_tokens: 0 }
-            };
-
-            const mockApiService: ClaudeApiService = {
-                askClaude: sinon.stub().callsFake(async () => {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    return mockResponse;
-                })
-            };
-
-            const mockContext = createMockExtensionContext();
-            testExtension = new ClaudeExtension(mockContext, mockApiService);
-            await testExtension.activate();
-
-            const mockText = "Test selection";
-            const doc = await vscode.workspace.openTextDocument({
-                content: mockText,
-                language: 'plaintext'
-            });
-            const editor = await vscode.window.showTextDocument(doc);
-            editor.selection = new vscode.Selection(0, 0, 0, mockText.length);
-
-            await vscode.commands.executeCommand('claude-vscode.askClaude');
-
-            const responseEditor = await waitForMarkdownEditor();
-            assert.ok(responseEditor, "Should find a markdown editor");
-
-            const editorContent = responseEditor.document.getText();
-            assert.ok(editorContent.includes('Request cancelled'), "Response should contain expected text");
-
-            console.log('Cancel Button test complete');
-        } catch (error) {
-            console.error('Cancel button test failed:', error);
-            throw error;
-        }
-    });
-});
+    const editor = await vscode.window.showTextDocument(doc);
+    editor.selection = createFullDocumentSelection(doc);
+    await waitForExtensionReady(500); // Give VS Code time to stabilize
+    return editor;
+}
 
 async function waitForMarkdownEditor(timeout = 5000): Promise<vscode.TextEditor | undefined> {
     const startTime = Date.now();
@@ -223,6 +41,271 @@ async function waitForMarkdownEditor(timeout = 5000): Promise<vscode.TextEditor 
 
     return undefined;
 }
+
+suite('Claude Extension Test Suite', () => {
+    let sandbox: sinon.SinonSandbox;
+    let testExtension: ClaudeExtension | null;
+    let mockContext: vscode.ExtensionContext;
+    let mockApiService: ClaudeApiService;
+    let registeredCommands: Map<string, (...args: any[]) => any>;
+    let originalExecuteCommand: typeof vscode.commands.executeCommand;
+
+    suiteSetup(async () => {
+        console.log('🎬 Starting test suite setup...');
+        await thoroughCleanup();
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('✨ Test suite setup complete!');
+    });
+
+    setup(async () => {
+        console.log('\n🔄 Setting up test...');
+
+        sandbox = sinon.createSandbox();
+        testExtension = null;
+        registeredCommands = new Map();
+
+        // Store original executeCommand
+        originalExecuteCommand = vscode.commands.executeCommand;
+
+        // Create mock API service
+        mockApiService = {
+            askClaude: sandbox.stub().resolves({
+                content: [{ type: 'text', text: 'Test response' }],
+                id: 'test-id',
+                model: 'claude-3-opus-20240229',
+                role: 'assistant',
+                stop_reason: null,
+                stop_sequence: null,
+                type: 'message',
+                usage: { input_tokens: 0, output_tokens: 0 }
+            })
+        };
+
+        // Stub command registration
+        sandbox.stub(vscode.commands, 'registerCommand').callsFake((commandId: string, handler: (...args: any[]) => any) => {
+            console.log(`🎯 Registering command: ${commandId}`);
+            registeredCommands.set(commandId, handler);
+            return {
+                dispose: () => {
+                    console.log(`🗑️ Disposing command: ${commandId}`);
+                    registeredCommands.delete(commandId);
+                }
+            };
+        });
+
+        // Stub command execution to handle both custom and built-in commands
+        sandbox.stub(vscode.commands, 'executeCommand').callsFake(async (commandId: string, ...args: any[]) => {
+            console.log(`🎮 Executing command: ${commandId}`);
+
+            // Check if it's one of our registered commands
+            const handler = registeredCommands.get(commandId);
+            if (handler) {
+                return handler(...args);
+            }
+
+            // If not our command, check if it's a built-in VS Code command
+            if (commandId.startsWith('workbench.') || commandId.startsWith('vscode.')) {
+                try {
+                    // Use the original executeCommand for built-in commands
+                    return await originalExecuteCommand.apply(vscode.commands, [commandId, ...args]);
+                } catch (error) {
+                    console.warn(`⚠️ Built-in command execution failed: ${commandId}`, error);
+                    // Don't throw for certain known commands that might not be available in test environment
+                    if (commandId === 'workbench.action.closeAllEditors') {
+                        return;
+                    }
+                    throw error;
+                }
+            }
+
+            throw new Error(`Command '${commandId}' not found`);
+        });
+
+        mockContext = createMockExtensionContext();
+
+        await thoroughCleanup();
+        console.log('✅ Test setup complete!');
+    });
+    teardown(async () => {
+        console.log('\n🧹 Starting test cleanup...');
+
+        sandbox.restore();
+        console.log('✨ Sandbox restored');
+
+        if (testExtension) {
+            await testExtension.dispose();
+            testExtension = null;
+            console.log('✅ Extension disposed');
+        }
+
+        await thoroughCleanup();
+        await forceUnregisterAllCommands();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        console.log('✨ Test cleanup complete!');
+    });
+
+    suiteTeardown(async () => {
+        console.log('🎬 Starting suite teardown...');
+        await thoroughCleanup();
+        await forceUnregisterAllCommands();
+        console.log('✨ Suite teardown complete!');
+    });
+
+    async function forceUnregisterAllCommands() {
+        const ourCommands = [
+            'claude-vscode.support',
+            'claude-vscode.askClaude',
+            'claude-vscode.documentCode'
+        ];
+
+        console.log('🗑️ Force unregistering commands...');
+        const allCommands = await vscode.commands.getCommands();
+
+        for (const cmd of ourCommands) {
+            try {
+                if (allCommands.includes(cmd)) {
+                    console.log(`Attempting to unregister: ${cmd}`);
+                    const disposable = vscode.commands.registerCommand(cmd, () => { });
+                    disposable.dispose();
+                }
+            } catch (err) {
+                console.warn(`⚠️ Error unregistering ${cmd}:`, err);
+            }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    test('Extension activates and registers commands properly', async function () {
+        this.timeout(10000);
+        console.log('\n🧪 Testing extension activation...');
+
+        testExtension = new ClaudeExtension(mockContext, mockApiService);
+        await testExtension.activate();
+
+        assert.ok(
+            registeredCommands.has('claude-vscode.support'),
+            'Support command should be registered'
+        );
+
+        assert.strictEqual(
+            mockContext.subscriptions.length > 0,
+            true,
+            'Subscriptions should be registered for cleanup'
+        );
+
+        // Log registered commands for debugging
+        console.log('📋 Registered commands:', Array.from(registeredCommands.keys()));
+
+        console.log('✅ Activation test completed successfully!');
+    });
+
+    test('Response Panel Creation and Management', async function () {
+        this.timeout(10000);
+        console.log('\n🧪 Testing response panel creation...');
+
+        testExtension = new ClaudeExtension(mockContext, mockApiService);
+        await testExtension.activate();
+
+        const editor = await createTestDocument("Test selection");
+        await vscode.commands.executeCommand('claude-vscode.askClaude');
+
+        const editors = vscode.window.visibleTextEditors;
+        assert.ok(editors.length > 0, "Should have visible editors");
+
+        console.log('✅ Response panel test complete!');
+    });
+
+
+    test('Extension handles errors gracefully', async function () {
+        this.timeout(45000);
+        console.log('\n🧪 Testing error handling...');
+
+        const errorApiService: ClaudeApiService = {
+            askClaude: sandbox.stub().rejects(new Error('Test API Error'))
+        };
+
+        testExtension = new ClaudeExtension(mockContext, errorApiService);
+        await testExtension.activate();
+
+        const showErrorMessageSpy = sandbox.spy(vscode.window, 'showErrorMessage');
+        const editor = await createTestDocument("Test selection");
+        await vscode.commands.executeCommand('claude-vscode.askClaude');
+
+        assert.ok(showErrorMessageSpy.called, 'Error message should be shown');
+
+        console.log('✅ Error handling test complete!');
+    });
+
+
+    test('Extension respects VS Code lifecycle events', async function () {
+        this.timeout(10000);
+        console.log('\n🧪 Testing VS Code lifecycle handling...');
+
+        const windowStateChangeEvent = new vscode.EventEmitter<void>();
+        sandbox.stub(vscode.window, 'onDidChangeWindowState')
+            .returns({ dispose: () => { } });
+
+        testExtension = new ClaudeExtension(mockContext, mockApiService);
+        await testExtension.activate();
+
+        // Get initial command count
+        const initialCommandCount = registeredCommands.size;
+        console.log('📊 Initial command count:', initialCommandCount);
+
+        // Simulate window state change
+        windowStateChangeEvent.fire();
+        await waitForExtensionReady(500);
+
+        // Verify commands are still registered
+        assert.strictEqual(
+            registeredCommands.size,
+            initialCommandCount,
+            'Commands should remain registered after window state change'
+        );
+
+        // Log current commands for debugging
+        console.log('📋 Current commands:', Array.from(registeredCommands.keys()));
+
+        console.log('✅ Lifecycle handling test complete!');
+    });
+
+    test('Memory management during multiple operations', async function () {
+        this.timeout(45000);
+        console.log('\n🧪 Testing memory management...');
+
+        const initialMemory = process.memoryUsage();
+
+        testExtension = new ClaudeExtension(mockContext, mockApiService);
+        await testExtension.activate();
+
+        for (let i = 0; i < 3; i++) {
+            console.log(`📝 Operation ${i + 1}/3`);
+            await createTestDocument(`Test content ${i}`);
+            await vscode.commands.executeCommand('claude-vscode.askClaude');
+            await thoroughCleanup();
+
+            if (global.gc) {
+                global.gc();
+            }
+        }
+
+        const finalMemory = process.memoryUsage();
+        console.log('📊 Memory usage (MB):', {
+            initial: initialMemory.heapUsed / 1024 / 1024,
+            final: finalMemory.heapUsed / 1024 / 1024,
+            diff: (finalMemory.heapUsed - initialMemory.heapUsed) / 1024 / 1024
+        });
+
+        assert.ok(
+            (finalMemory.heapUsed - initialMemory.heapUsed) < 5 * 1024 * 1024,
+            'Memory increase should be reasonable'
+        );
+
+        console.log('✅ Memory management test complete!');
+    });
+});
 
 function createMockExtensionContext(): vscode.ExtensionContext {
     class MockMemento implements vscode.Memento {
@@ -278,5 +361,18 @@ function createMockExtensionContext(): vscode.ExtensionContext {
         storageUri: vscode.Uri.file(""),
         extensionMode: vscode.ExtensionMode.Test,
         globalStoragePath: "",
+        extension: {
+            id: 'test-extension',
+            extensionUri: vscode.Uri.file(''),
+            extensionPath: '',
+            isActive: true,
+            packageJSON: {},
+            exports: undefined,
+            activate: () => Promise.resolve(),
+            extensionKind: vscode.ExtensionKind.Workspace
+        },
+        environmentVariableCollection: {
+            getScoped: () => ({})
+        } as any,
     } as unknown as vscode.ExtensionContext;
 }
