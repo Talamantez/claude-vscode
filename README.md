@@ -2,20 +2,9 @@
 
 Bring the power of Claude directly into your development workflow. This extension allows you to interact with Claude AI without leaving VS Code, helping you write, document, and understand code more effectively.
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/conscious.robot)
-
-[Support Feminist Inclusion Leadership Uganda](https://www.mchanga.africa/fundraiser/97578) <a href="https://www.mchanga.africa/fundraiser/97578">
-  <img src="feminist-inclusion-leadership-center/filc1.jpg" alt="Feminist Inclusion Leadership Uganda Image 1" width="100" />
-</a>
-
-By [Conscious Robot](https://conscious-robot.com)
-Inspired by [Baratunde "We go faster when we go together" Thurston](https://podcasts.apple.com/us/podcast/life-with-machines/id1766829040)
-
 # 🎉 Celebrating 100 Installs! 🎉
 
 A huge **THANK YOU** to all the amazing users who have installed and supported this extension! Together we can build a happy, safe, easy to use internet! (go fig!:-D) 🙌
-
-Introducing the Beep to Claude AI Assistant's Boop, [FlashRepo](https://marketplace.visualstudio.com/items?itemName=conscious-robot.flash-repo)! Easily concatenate repository files for AI context sharing.
 
  # Right Click? Claude!
 ![image](https://github.com/user-attachments/assets/3e3abb1f-d12b-468a-99ef-0e3a347a701d)
@@ -28,7 +17,7 @@ Introducing the Beep to Claude AI Assistant's Boop, [FlashRepo](https://marketpl
 
 * Ask Claude: Select any text and right click to get instant AI assistance
 * Document Code: Automatically generate documentation for your code
-* Context-Aware: Include context by including text from previous responses.
+* Context-Aware: Include context by including text from previous responses
 * Markdown Output: Responses are formatted in clean, readable Markdown
 
 ## Quick Start
@@ -83,22 +72,24 @@ Choose your model in VS Code settings:
 
 Need help? Visit our [GitHub repository](https://github.com/talamantez/claude-vscode)
 
-## 🏳️‍⚧️📢Support Transgender Rights in Uganda!
+## Pricing
 
-[Feminist Inclusion Leadership Uganda](https://filcenter.org/) [Fundraiser](https://www.mchanga.africa/fundraiser/97578) is on the ground fighting to create a more just, inclusive and peaceful society for transgender, gender diverse and intersex individuals in Uganda and East Africa.
+🌟 **Early Adopter Benefit**: All current users will continue to enjoy the extension at no cost - thank you for your early support!
 
-Please consider learning more about their mission and supporting their fundraiser if you can. Even spreading awareness helps!
+### New Users:
+The extension is available for a one-time purchase of $10. This includes:
+- Seamless VS Code integration with Claude AI
+- Time-saving right-click AI assistance
+- Automatic code documentation generation
+- Smart context-aware interactions
+- Regular updates and improvements
+- Never leave your editor - save hours of context switching
 
-<a href="https://www.mchanga.africa/fundraiser/97578">
-  <img src="feminist-inclusion-leadership-center/filc1.jpg" alt="Feminist Inclusion Leadership Uganda Image 1" width="400" />
-</a>
+*Note: Users need their own Claude API key from Anthropic*
 
-<a href="https://www.mchanga.africa/fundraiser/97578">  
-  <img src="feminist-inclusion-leadership-center/flic2.jpg" alt="Feminist Inclusion Leadership Uganda Image 2" width="400" />
-</a>
+### Why Purchase?
+Save valuable development time by bringing Claude's capabilities directly into your workflow. No more switching between browser tabs or copying/pasting code - everything you need is just a right-click away in VS Code.
 
 ## Call for Feature Requests
 
-What's working? What's not? What are your other painpoints in your AI workflow? Want to chat about fresh baked lemon cupcakes? Don't be shy. [Open an Issue!](https://github.com/talamantez/claude-vscode/issues/new)
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-yellow?style=flat&logo=buy-me-a-coffee)](https://www.buymeacoffee.com/conscious.robot)
+What's working? What's not? What are you looking for in an AI workflow? Want to chat about fresh baked lemon cupcakes? Don't be shy. [Open an Issue!](https://github.com/talamantez/claude-vscode/issues/new)
