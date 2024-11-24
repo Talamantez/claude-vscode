@@ -1,5 +1,0 @@
-{
-    "project": "claude-vscode-api",
-    "entrypoint": "main.ts",
-    "exclude": [".env", "node_modules", ".vscode"]
-  }
