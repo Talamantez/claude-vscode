@@ -2,11 +2,12 @@
 import * as vscode from 'vscode';
 import { getConfiguration } from './config';
 
-// Constants
+// Constants and type definitions
 const SERVICE_URL = 'https://api.anthropic.com/v1/messages';
 const VALID_MODELS = ['claude-3-opus-20240229', 'claude-3-sonnet-20240229'] as const;
 type ValidModel = typeof VALID_MODELS[number];
 
+// Interface definitions
 export interface ClaudeMessageContent {
     type: 'text';  // Restrict to known types
     text: string;
@@ -28,7 +29,7 @@ export interface ClaudeResponse {
     dailyLimit?: number;
 }
 
-// Enhanced type guard with complete validation
+// Type guard functions - defined before use
 function isClaudeMessageContent(item: unknown): item is ClaudeMessageContent {
     return (
         typeof item === 'object' &&
@@ -43,12 +44,10 @@ function isClaudeMessageContent(item: unknown): item is ClaudeMessageContent {
 function isClaudeResponse(data: unknown): data is ClaudeResponse {
     const response = data as Partial<ClaudeResponse>;
 
-    // Basic structure check
     if (typeof data !== 'object' || data === null) {
         return false;
     }
 
-    // Required fields check
     const requiredStringFields = ['id', 'type', 'role'] as const;
     for (const field of requiredStringFields) {
         if (typeof response[field] !== 'string') {
@@ -56,17 +55,14 @@ function isClaudeResponse(data: unknown): data is ClaudeResponse {
         }
     }
 
-    // Content array check
     if (!Array.isArray(response.content)) {
         return false;
     }
 
-    // Validate each content item
     if (!response.content.every(isClaudeMessageContent)) {
         return false;
     }
 
-    // Usage object check
     if (
         typeof response.usage !== 'object' ||
         response.usage === null ||
@@ -76,7 +72,6 @@ function isClaudeResponse(data: unknown): data is ClaudeResponse {
         return false;
     }
 
-    // Optional fields check
     if (
         (response.stop_reason !== null && typeof response.stop_reason !== 'string') ||
         (response.stop_sequence !== null && typeof response.stop_sequence !== 'string') ||
@@ -86,7 +81,6 @@ function isClaudeResponse(data: unknown): data is ClaudeResponse {
         return false;
     }
 
-    // Validate model string matches expected format
     if (!response.model || !VALID_MODELS.includes(response.model as ValidModel)) {
         return false;
     }
@@ -94,6 +88,7 @@ function isClaudeResponse(data: unknown): data is ClaudeResponse {
     return true;
 }
 
+// Main API function
 export async function askClaude(text: string, token?: vscode.CancellationToken): Promise<ClaudeResponse> {
     const config = getConfiguration();
 
@@ -114,12 +109,16 @@ export async function askClaude(text: string, token?: vscode.CancellationToken):
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache',
+                'anthropic-version': '2023-06-01',
                 'x-api-key': config.apiKey || process.env.CLAUDE_API_KEY || ''
             },
             body: JSON.stringify({
-                prompt: text,
-                model: config.model
+                messages: [{
+                    role: 'user',
+                    content: text
+                }],
+                model: config.model,
+                max_tokens: 1500
             }),
             signal: abortController.signal
         });
