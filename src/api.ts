@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { getConfiguration } from './config';
 
 // Constants
-const SERVICE_URL = 'https://long-ferret-58.deno.dev';
+const SERVICE_URL = 'https://api.anthropic.com/v1/messages';
 const VALID_MODELS = ['claude-3-opus-20240229', 'claude-3-sonnet-20240229'] as const;
 type ValidModel = typeof VALID_MODELS[number];
 
@@ -114,13 +114,14 @@ export async function askClaude(text: string, token?: vscode.CancellationToken):
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache'
+                'Cache-Control': 'no-cache',
+                'x-api-key': config.apiKey || process.env.CLAUDE_API_KEY || ''
             },
             body: JSON.stringify({
                 prompt: text,
                 model: config.model
             }),
-            signal: abortController.signal // Use the AbortController's signal
+            signal: abortController.signal
         });
 
         if (!response.ok) {

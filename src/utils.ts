@@ -33,7 +33,6 @@ export async function ensureAllEditorsClosed(retries = 3, delay = 500): Promise<
 export async function unregisterCommands(): Promise<void> {
     const allCommands = await vscode.commands.getCommands();
     const ourCommands = [
-        'claude-vscode.support',
         'claude-vscode.askClaude',
         'claude-vscode.documentCode'
     ];
