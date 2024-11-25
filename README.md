@@ -18,6 +18,12 @@ The reliable, polished VS Code extension for Claude AI integration. Ask question
 - **Thoughtful Design**: Cancel operations cleanly, preserve your source code state, no unwanted prompts
 - **7-Day Free Trial**: Experience the reliability yourself
 
+## Basic Use: Right Click? Ask Claude!
+
+### Tutorial Video
+[Basic Usage: Ask Claude AI about a Python Flask Video Analyzer Application](https://www.awesomescreenshot.com/video/33954964)
+
+
 ## Coming Soon in v2.x 🚀
 - **[Flash-Repo](https://github.com/Talamantez/flash-repo-vscode)**: Share ALL the files you need and ONLY the files you need with Claude AI
 - **[Flash-Hydrate](https://github.com/Talamantez/flash-hydrate-vscode)**: Hydrate Claude AI responses into Code Repositories

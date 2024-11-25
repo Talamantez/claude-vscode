@@ -2,6 +2,10 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2024-11-24
+### Added
+Video Tutorial Basic Usage: Ask Claude AI about a Python Flask Video Analyzer Application: https://www.awesomescreenshot.com/video/33954964
+
 ## [2.1.1] - 2024-11-24
 ### Fixed
 Contact email in docs
