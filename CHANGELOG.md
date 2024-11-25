@@ -2,6 +2,10 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.5] - 2024-11-24
+### Fixed
+Corrected grammar on Readme
+
 ## [2.1.4] - 2024-11-24
 ### Changed
 Updated title of video tutorial to emphasize 6000 line digestion
