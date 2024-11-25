@@ -16,7 +16,7 @@ The reliable, polished VS Code extension for Claude AI integration. Ask question
 - **Rock-solid Stability**: Extensively tested window management, reliable response handling, and proper state preservation
 - **Clean Interface**: Responses appear exactly where they should, every time
 - **Thoughtful Design**: Cancel operations cleanly, preserve your source code state, no unwanted prompts
-- **7-Day Free Trial**: Experience the reliability yourself
+- **7-Day Free Trial**: Experience the reliability for yourself
 
 ## Basic Use: Right Click? Ask Claude!
 
