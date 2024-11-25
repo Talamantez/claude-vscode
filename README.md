@@ -21,7 +21,7 @@ The reliable, polished VS Code extension for Claude AI integration. Ask question
 ## Basic Use: Right Click? Ask Claude!
 
 ### Tutorial Video
-[Basic Usage: Ask Claude AI about a Python Flask Video Analyzer Application](https://www.awesomescreenshot.com/video/33954964?key=6cfc609183bb09f48e218063d4140a4e)
+[Basic Usage: Claude AI easy chews 6000 line file (repository concatenation)](https://www.awesomescreenshot.com/video/33954964?key=6cfc609183bb09f48e218063d4140a4e)
 
 
 ## Coming Soon in v2.x 🚀
