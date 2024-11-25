@@ -3,6 +3,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.1.2] - 2024-11-24
+### Fixed
+Replaced broken Video Tutorial link with Sharable link: https://www.awesomescreenshot.com/video/33954964?key=6cfc609183bb09f48e218063d4140a4e
+
+## [2.1.2] - 2024-11-24
 ### Added
 Video Tutorial Basic Usage: Ask Claude AI about a Python Flask Video Analyzer Application: https://www.awesomescreenshot.com/video/33954964
 
