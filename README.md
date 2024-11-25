@@ -52,7 +52,7 @@ No complex setup. No unexpected behaviors. Select text, right-click, and get you
 
 ## Support
 - GitHub Issues: [claude-vscode](https://github.com/talamantez/claude-vscode/issues)
-- Email: info@consciousrobot.com
+- Email: info@conscious-robot.com
 - Priority response for Pro users
 
 ---
