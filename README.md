@@ -20,13 +20,15 @@ The reliable, polished VS Code extension for Claude AI integration. Ask question
 
 ## Basic Use: Right Click? Ask Claude!
 
-### Tutorial Video
-How many hot dogs can you eat in a sitting?
+### Anyone hungry?
+Claude AI eats the whole turkey in this demo video.
 [Basic Usage: Claude AI easily digests a 6000 line file (repository concatenation)](https://www.awesomescreenshot.com/video/33954964?key=6cfc609183bb09f48e218063d4140a4e)
 
+### Share your whole repository with Claude
+Help AI see the full context! That's how you get the most accurate results. Easily snapshot all your necessary files into a single document with Flash-Repo-Snapshot.
+- **[Flash-Repo-Snapshot](https://marketplace.visualstudio.com/items?itemName=conscious-robot.flash-repo-vscode)**
 
-## Coming Soon in v2.x 🚀
-- **[Flash-Repo](https://github.com/Talamantez/flash-repo-vscode)**: Share ALL the files you need and ONLY the files you need with Claude AI
+## Coming Soon from Conscious Robot 🚀
 - **[Flash-Hydrate](https://github.com/Talamantez/flash-hydrate-vscode)**: Hydrate Claude AI responses into Code Repositories
 
 ## Core Features
