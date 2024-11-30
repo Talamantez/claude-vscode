@@ -2,7 +2,7 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.7] - 2024-11-30
+## [2.1.7] - 2024-11-29
 ### Added
 - Support for all Claude 3 and 3.5 models
 - Improved response handling
@@ -10,46 +10,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documented real-world outputs for each of the models
 ### Fixed
 - Response format validation for all Claude models
+### Changed
+- Revamped Readme
 
 ## [2.1.6] - 2024-11-26
 ### Changed
-Updated Readme
+- Updated Readme
 
 ## [2.1.5] - 2024-11-24
 ### Fixed
-Corrected grammar on Readme
+- Corrected grammar on Readme
 
 ## [2.1.4] - 2024-11-24
 ### Changed
-Updated title of video tutorial to emphasize 6000 line digestion
+- Updated title of video tutorial to emphasize 6000 line digestion
 
 ## [2.1.3] - 2024-11-24
 ### Fixed
-Replaced broken Video Tutorial link with Sharable link: https://www.awesomescreenshot.com/video/33954964?key=6cfc609183bb09f48e218063d4140a4e
+- Replaced broken Video Tutorial link with sharable link: https://www.awesomescreenshot.com/video/33954964?key=6cfc609183bb09f48e218063d4140a4e
 
 ## [2.1.2] - 2024-11-24
 ### Added
-Video Tutorial Basic Usage: Ask Claude AI about a Python Flask Video Analyzer Application: https://www.awesomescreenshot.com/video/33954964
+- Video Tutorial Basic Usage: Ask Claude AI about a Python Flask Video Analyzer Application
 
 ## [2.1.1] - 2024-11-24
 ### Fixed
-Contact email in docs
-Repaired 🎉 Note for Early Adopters 🎉 in readme
+- Contact email in docs
+- Repaired 🎉 Note for Early Adopters 🎉 in readme
 
 ## [2.1.0] - 2024-11-24
 ### Fixed
-API Endpoint 400 error
+- API Endpoint 400 error
 ### Changed
-Update API Test Suite
+- Update API Test Suite
 ### Added
- 🎉 Note for Early Adopters 🎉
-
-As a thank you for your early support you'll continue to have full access without any subscription required! 🎉
-Not affected if you installed after v2.0. 
+- 🎉 Note for Early Adopters 🎉
+  - As a thank you for your early support you'll continue to have full access without any subscription required!
+  - Not affected if you installed after v2.0.
 
 ## [2.0.1] - 2024-11-24
 ### Fixed
-Purchase link
+- Purchase link
 
 ## [2.0.0] - 2024-11-24
 ### 🚀 Going Pro!
@@ -75,41 +76,41 @@ After a few intense weeks of development and amazing community support, we're ta
 
 ## [1.1.13] - 2024-11-22
 ### Fixed
- - Bug: First-time right-click "Ask Claude" was triggering save prompt on source file
- - Improved editor management to prevent VS Code's preview behavior from affecting source files
- - Enhanced source editor state preservation during Claude responses
+- Bug: First-time right-click "Ask Claude" was triggering save prompt on source file
+- Improved editor management to prevent VS Code's preview behavior from affecting source files
+- Enhanced source editor state preservation during Claude responses
 
 ## [1.1.12] - 2024-11-22
 ### Fixed
- - Bug: Panel was closing, brought extension under docker vm, updated tests
+- Bug: Panel was closing, brought extension under docker vm, updated tests
 
 ## [1.1.11] - 2024-11-22
 ### Fixed
- - Bug: Panel was closing, changed preview mode to false
+- Bug: Panel was closing, changed preview mode to false
 
 ## [1.1.10] - 2024-11-21
 ### Fixed
- - Bug: "Cancel" button was working in the UI but was letting the request complete in the background.
+- Bug: "Cancel" button was working in the UI but was letting the request complete in the background
 
 ## [1.1.9] - 2024-11-21
 ### Changed
- - Fixed broken link in readme, fix changelog date
+- Fixed broken link in readme, fix changelog date
 
 ## [1.1.8] - 2024-11-21
 ### Changed
- - Added Cancel Button, updated test suite
+- Added Cancel Button, updated test suite
 
 ## [1.1.7] - 2024-11-18
 ### Changed
- - Updated Icon
+- Updated Icon
 
 ## [1.1.6] - 2024-11-18
 ### Changed
- - Update Readme: hoist Feminist Inclusion Leadership Center fundraiser
+- Update Readme: hoist Feminist Inclusion Leadership Center fundraiser
 
 ## [1.1.4] - 2024-11-18
 ### Changed
- - Update Readme with new product announcement
+- Update Readme with new product announcement
 
 ## [1.1.4] - 2024-11-18
 ### Fixed
