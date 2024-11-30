@@ -4,12 +4,18 @@ import { getConfiguration } from './config';
 
 // Constants and type definitions
 const SERVICE_URL = 'https://api.anthropic.com/v1/messages';
-const VALID_MODELS = ['claude-3-opus-20240229', 'claude-3-sonnet-20240229'] as const;
+const VALID_MODELS = [
+    'claude-3-opus-20240229',
+    'claude-3-sonnet-20240229',
+    'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022',
+    'claude-3-5-sonnet-20240620'
+] as const;
 type ValidModel = typeof VALID_MODELS[number];
 
 // Interface definitions
 export interface ClaudeMessageContent {
-    type: 'text';  // Restrict to known types
+    type: 'text';
     text: string;
 }
 
@@ -17,7 +23,7 @@ export interface ClaudeResponse {
     id: string;
     type: string;
     role: string;
-    model: ValidModel;
+    model: string; // Changed from ValidModel to string for more flexibility
     content: ClaudeMessageContent[];
     stop_reason: string | null;
     stop_sequence: string | null;
@@ -29,66 +35,94 @@ export interface ClaudeResponse {
     dailyLimit?: number;
 }
 
-// Type guard functions - defined before use
+// Type guard functions with more flexible validation
 function isClaudeMessageContent(item: unknown): item is ClaudeMessageContent {
-    return (
-        typeof item === 'object' &&
-        item !== null &&
-        'type' in item &&
-        'text' in item &&
-        (item as ClaudeMessageContent).type === 'text' &&
-        typeof (item as ClaudeMessageContent).text === 'string'
-    );
-}
-
-function isClaudeResponse(data: unknown): data is ClaudeResponse {
-    const response = data as Partial<ClaudeResponse>;
-
-    if (typeof data !== 'object' || data === null) {
+    if (!item || typeof item !== 'object') {
         return false;
     }
 
-    const requiredStringFields = ['id', 'type', 'role'] as const;
-    for (const field of requiredStringFields) {
-        if (typeof response[field] !== 'string') {
-            return false;
-        }
-    }
+    const content = item as Partial<ClaudeMessageContent>;
 
-    if (!Array.isArray(response.content)) {
+    // Allow for potential variations in content structure
+    if (content.type !== 'text') {
         return false;
     }
 
-    if (!response.content.every(isClaudeMessageContent)) {
-        return false;
-    }
-
-    if (
-        typeof response.usage !== 'object' ||
-        response.usage === null ||
-        typeof response.usage.input_tokens !== 'number' ||
-        typeof response.usage.output_tokens !== 'number'
-    ) {
-        return false;
-    }
-
-    if (
-        (response.stop_reason !== null && typeof response.stop_reason !== 'string') ||
-        (response.stop_sequence !== null && typeof response.stop_sequence !== 'string') ||
-        (response.remaining !== undefined && typeof response.remaining !== 'number') ||
-        (response.dailyLimit !== undefined && typeof response.dailyLimit !== 'number')
-    ) {
-        return false;
-    }
-
-    if (!response.model || !VALID_MODELS.includes(response.model as ValidModel)) {
+    if (typeof content.text !== 'string') {
         return false;
     }
 
     return true;
 }
 
-// Main API function
+function isClaudeResponse(data: unknown): data is ClaudeResponse {
+    if (!data || typeof data !== 'object') {
+        return false;
+    }
+
+    const response = data as Partial<ClaudeResponse>;
+
+    // Required string fields with more flexible validation
+    if (typeof response.id !== 'string' ||
+        typeof response.type !== 'string' ||
+        typeof response.role !== 'string') {
+        return false;
+    }
+
+    // Model validation - just ensure it's a string
+    if (typeof response.model !== 'string') {
+        return false;
+    }
+
+    // Content validation with error handling
+    if (!Array.isArray(response.content)) {
+        return false;
+    }
+
+    // Check each content item but don't fail on empty array
+    if (response.content.length > 0 && !response.content.every(isClaudeMessageContent)) {
+        return false;
+    }
+
+    // Usage validation with more flexible structure
+    if (!response.usage || typeof response.usage !== 'object') {
+        return false;
+    }
+
+    const usage = response.usage as Record<string, unknown>;
+    if (typeof usage.input_tokens !== 'number' ||
+        typeof usage.output_tokens !== 'number') {
+        return false;
+    }
+
+    // Optional fields validation
+    if (response.stop_reason !== undefined &&
+        response.stop_reason !== null &&
+        typeof response.stop_reason !== 'string') {
+        return false;
+    }
+
+    if (response.stop_sequence !== undefined &&
+        response.stop_sequence !== null &&
+        typeof response.stop_sequence !== 'string') {
+        return false;
+    }
+
+    // Optional numeric fields
+    if (response.remaining !== undefined &&
+        typeof response.remaining !== 'number') {
+        return false;
+    }
+
+    if (response.dailyLimit !== undefined &&
+        typeof response.dailyLimit !== 'number') {
+        return false;
+    }
+
+    return true;
+}
+
+// Main API function with improved error handling
 export async function askClaude(text: string, token?: vscode.CancellationToken): Promise<ClaudeResponse> {
     const config = getConfiguration();
 
@@ -96,7 +130,6 @@ export async function askClaude(text: string, token?: vscode.CancellationToken):
         throw new Error('No API key configured. Please add your Claude API key in settings.');
     }
 
-    // Create AbortController and link it to the cancellation token
     const abortController = new AbortController();
     if (token) {
         token.onCancellationRequested(() => {
@@ -124,20 +157,25 @@ export async function askClaude(text: string, token?: vscode.CancellationToken):
         });
 
         if (!response.ok) {
-            const errorData = await response.text();
-            throw new Error(`API error: ${response.status} - ${errorData}`);
+            let errorMessage = `API error: ${response.status}`;
+            try {
+                const errorData = await response.text();
+                errorMessage += ` - ${errorData}`;
+            } catch {
+                // If we can't parse the error response, just use the status
+            }
+            throw new Error(errorMessage);
         }
 
-        const data: unknown = await response.json();
+        const data = await response.json();
 
         if (!isClaudeResponse(data)) {
-            console.error('Invalid response structure:', data);
+            console.error('Invalid response structure:', JSON.stringify(data, null, 2));
             throw new Error('Invalid response format from Claude API');
         }
 
         return data;
     } catch (error) {
-        // Check if the error was due to cancellation
         if (error instanceof Error && error.name === 'AbortError') {
             throw new vscode.CancellationError();
         }

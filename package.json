@@ -1,7 +1,7 @@
 {
   "name": "claude-vscode-assistant",
   "displayName": "Claude AI Assistant",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "Claude AI assistant for Visual Studio Code - Seamlessly integrate Claude's capabilities into your development workflow",
   "publisher": "conscious-robot",
   "pricing": "Trial",
@@ -77,12 +77,26 @@
       }
     ],
     "configuration": {
-      "title": "Claude VS Code",
+      "title": "Claude AI Assistant Pro",
       "properties": {
         "claude-vscode.model": {
           "type": "string",
           "default": "claude-3-opus-20240229",
-          "description": "Claude model to use for requests"
+          "enum": [
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-haiku-20241022",
+            "claude-3-5-sonnet-20240620"
+          ],
+          "enumDescriptions": [
+            "Claude 3 Opus (Most Capable)",
+            "Claude 3 Sonnet (Balanced)",
+            "Claude 3.5 Sonnet (Latest)",
+            "Claude 3.5 Haiku (Fastest)",
+            "Claude 3.5 Sonnet (June 2024)"
+          ],
+          "description": "Select which Claude model to use"
         },
         "claude-vscode.apiKey": {
           "type": "string",

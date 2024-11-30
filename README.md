@@ -42,6 +42,9 @@ Help AI see the full context! That's how you get the most accurate results. Easi
 ## It Just Works
 No complex setup. No unexpected behaviors. Select text, right-click, and get your response in a clean, properly-managed window. Every time.
 
+⚡Tested thoroughly with claude-3-opus-20240229
+(other Claude AI models pending)
+
 ## Getting Started
 1. Install the extension
 2. Add your Claude API key in settings
@@ -52,6 +55,16 @@ No complex setup. No unexpected behaviors. Select text, right-click, and get you
 - One-time purchase: $9.99
 - 7-day free trial for new users
 - Includes all future updates in 2.x series
+
+## Validated through testing
+- [checked box] claude-3-opus-20240229
+- [unchecked box] claude-3-5-sonnet-20241022
+- [unchecked box] claude-3-5-haiku-20241022
+- [unchecked box] claude-3-sonnet-20240229
+- [unchecked box] claude-3-5-sonnet-20240620
+
+## Anthropic Model Documentation
+- [AI Models](https://docs.anthropic.com/en/docs/about-claude/models)
 
 ## Support
 - GitHub Issues: [claude-vscode](https://github.com/talamantez/claude-vscode/issues)

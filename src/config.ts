@@ -9,18 +9,36 @@ export interface Configuration {
 
 // Extension timing configuration
 export const Timeouts = {
-    CLEANUP: 1000, // 1 second for cleanup operations
-    DEFAULT_ACTIVATION: 100, // 100ms default safety delay
+    CLEANUP: 1000,
+    DEFAULT_ACTIVATION: 100,
     get ACTIVATION(): number {
         return parseInt(process.env.VSCODE_CLAUDE_ACTIVATION_TIMEOUT || '', 10) || this.DEFAULT_ACTIVATION;
     },
     STATUS_BAR_PRIORITY: 100
 } as const;
 
+// Update the valid models list to match package.json
+export const VALID_MODELS = [
+    'claude-3-opus-20240229',
+    'claude-3-sonnet-20240229',
+    'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022',
+    'claude-3-5-sonnet-20240620'
+] as const;
+
+export type ValidModel = typeof VALID_MODELS[number];
+
 export function getConfiguration(): Configuration {
     const config = vscode.workspace.getConfiguration('claude-vscode');
+    const modelSetting = config.get<string>('model');
+
+    // Type-safe model validation
+    const model = typeof modelSetting === 'string' && VALID_MODELS.includes(modelSetting as ValidModel)
+        ? modelSetting
+        : 'claude-3-opus-20240229';
+
     return {
-        model: config.get('model') || 'claude-3-opus-20240229',
+        model,
         apiKey: config.get('apiKey')
     };
 }
@@ -43,7 +61,6 @@ export async function unregisterCommands(): Promise<void> {
         }
     }
 
-    // Wait for commands to unregister
     await waitForExtensionReady(Timeouts.ACTIVATION);
 
     // Force cleanup in case normal unregistration failed
@@ -51,7 +68,6 @@ export async function unregisterCommands(): Promise<void> {
     for (const cmd of ourCommands) {
         if (remainingCommands.includes(cmd)) {
             try {
-                // Force dispose any existing command registration
                 const existingDisposable = vscode.commands.registerCommand(cmd, () => { });
                 existingDisposable.dispose();
             } catch (err) {
@@ -60,6 +76,5 @@ export async function unregisterCommands(): Promise<void> {
         }
     }
 
-    // Final wait to ensure cleanup
     await waitForExtensionReady(Timeouts.ACTIVATION);
 }
