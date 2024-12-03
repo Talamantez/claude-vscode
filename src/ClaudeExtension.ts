@@ -1,18 +1,15 @@
-// File: src/ClaudeExtension.ts
 import * as vscode from 'vscode';
 import { ClaudeApiService, DefaultClaudeApiService } from './services/claude-api';
 import { ClaudeResponse } from './api';
 import { ResponsePanelManager } from './ResponsePanelManager';
 import { CommandManager } from './CommandManager';
 import { Timeouts } from './config';
-import { LicenseService } from './services/license-service';
 
 export class ClaudeExtension {
     private readonly _disposables: vscode.Disposable[] = [];
     private readonly _apiService: ClaudeApiService;
     private readonly _panelManager: ResponsePanelManager;
     private readonly _commandManager: CommandManager;
-    private readonly _licenseService: LicenseService;
 
     constructor(
         private readonly _context: vscode.ExtensionContext,
@@ -21,43 +18,28 @@ export class ClaudeExtension {
         this._apiService = apiService || new DefaultClaudeApiService();
         this._panelManager = new ResponsePanelManager(_context);
         this._commandManager = new CommandManager(_context);
-        this._licenseService = new LicenseService(_context);
 
         // Track these managers for disposal
         this._disposables.push(this._panelManager);
         this._disposables.push(this._commandManager);
     }
+
     public async activate(): Promise<void> {
         // Ensure clean state
         await this.dispose();
 
-        // Initialize license
-        await this._licenseService.initializeLicense();
-        await this._licenseService.showLicenseStatus();
-
         // Register commands
         await this._commandManager.registerCommands({
             'claude-vscode.askClaude': async () => {
-                const isLicenseValid = await this._licenseService.validateLicense();
-                if (!isLicenseValid) {
-                    await this._licenseService.showLicenseStatus();
-                    return;
-                }
                 await this._handleClaudeRequest('general');
             },
             'claude-vscode.documentCode': async () => {
-                const isLicenseValid = await this._licenseService.validateLicense();
-                if (!isLicenseValid) {
-                    await this._licenseService.showLicenseStatus();
-                    return;
-                }
                 await this._handleClaudeRequest('document');
             }
         });
     }
 
     public async dispose(): Promise<void> {
-        // Dispose all disposables
         await Promise.all(this._disposables.map(d => {
             try {
                 return Promise.resolve(d.dispose());

@@ -126,6 +126,7 @@ suite('Claude Extension Test Suite', () => {
         await thoroughCleanup();
         console.log('✅ Test setup complete!');
     });
+
     teardown(async () => {
         console.log('\n🧹 Starting test cleanup...');
 
@@ -154,7 +155,6 @@ suite('Claude Extension Test Suite', () => {
 
     async function forceUnregisterAllCommands() {
         const ourCommands = [
-            'claude-vscode.support',
             'claude-vscode.askClaude',
             'claude-vscode.documentCode'
         ];
@@ -212,7 +212,6 @@ suite('Claude Extension Test Suite', () => {
         console.log('✅ Response panel test complete!');
     });
 
-
     test('Extension handles errors gracefully', async function () {
         this.timeout(45000);
         console.log('\n🧪 Testing error handling...');
@@ -233,7 +232,6 @@ suite('Claude Extension Test Suite', () => {
         console.log('✅ Error handling test complete!');
     });
 
-
     test('Extension respects VS Code lifecycle events', async function () {
         this.timeout(10000);
         console.log('\n🧪 Testing VS Code lifecycle handling...');
@@ -245,24 +243,19 @@ suite('Claude Extension Test Suite', () => {
         testExtension = new ClaudeExtension(mockContext, mockApiService);
         await testExtension.activate();
 
-        // Get initial command count
         const initialCommandCount = registeredCommands.size;
         console.log('📊 Initial command count:', initialCommandCount);
 
-        // Simulate window state change
         windowStateChangeEvent.fire();
         await waitForExtensionReady(500);
 
-        // Verify commands are still registered
         assert.strictEqual(
             registeredCommands.size,
             initialCommandCount,
             'Commands should remain registered after window state change'
         );
 
-        // Log current commands for debugging
         console.log('📋 Current commands:', Array.from(registeredCommands.keys()));
-
         console.log('✅ Lifecycle handling test complete!');
     });
 
