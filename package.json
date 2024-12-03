@@ -1,16 +1,16 @@
 {
   "name": "claude-vscode-assistant",
   "displayName": "Claude AI Assistant",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "description": "Claude AI assistant for Visual Studio Code - Seamlessly integrate Claude's capabilities into your development workflow",
   "publisher": "conscious-robot",
-  "pricing": "Trial",
+  "pricing": "Free",
   "preview": false,
   "repository": {
     "type": "git",
     "url": "https://github.com/talamantez/claude-vscode"
   },
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "MIT",
   "qna": "https://github.com/talamantez/claude-vscode/issues",
   "bugs": {
     "url": "https://github.com/talamantez/claude-vscode/issues"
@@ -77,7 +77,7 @@
       }
     ],
     "configuration": {
-      "title": "Claude AI Assistant Pro",
+      "title": "Claude AI Assistant",
       "properties": {
         "claude-vscode.model": {
           "type": "string",
