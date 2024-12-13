@@ -1,22 +1,25 @@
+// src/ClaudeExtension.ts
 import * as vscode from 'vscode';
 import { ClaudeApiService, DefaultClaudeApiService } from './services/claude-api';
+import { ApiService } from './services/api-service';
 import { ClaudeResponse } from './api';
 import { ResponsePanelManager } from './ResponsePanelManager';
 import { CommandManager } from './CommandManager';
-import { Timeouts } from './config';
-import { getConfiguration } from './config';
+import { Timeouts, getConfiguration } from './config';
 
 export class ClaudeExtension {
     private readonly _disposables: vscode.Disposable[] = [];
-    private readonly _apiService: ClaudeApiService;
+    private readonly _apiService: ApiService;
+    private readonly _claudeApiService: ClaudeApiService;
     private readonly _panelManager: ResponsePanelManager;
     private readonly _commandManager: CommandManager;
 
     constructor(
         private readonly _context: vscode.ExtensionContext,
-        apiService?: ClaudeApiService
+        claudeApiService?: ClaudeApiService
     ) {
-        this._apiService = apiService || new DefaultClaudeApiService();
+        this._claudeApiService = claudeApiService || new DefaultClaudeApiService();
+        this._apiService = new ApiService();
         this._panelManager = new ResponsePanelManager(_context);
         this._commandManager = new CommandManager(_context);
 
@@ -36,20 +39,70 @@ export class ClaudeExtension {
             },
             'claude-vscode.documentCode': async () => {
                 await this._handleClaudeRequest('document');
+            },
+            'claude-vscode.analyzeWorkspace': async () => {
+                await this._handleArchitectureAnalysis();
             }
         });
+
+        // Show initial status
+        await this._updateStatusBar();
     }
 
-    public async dispose(): Promise<void> {
-        await Promise.all(this._disposables.map(d => {
+    private async _updateStatusBar(): Promise<void> {
+        try {
+            const quota = await this._apiService.getQuota();
+            const statusBarItem = vscode.window.createStatusBarItem(
+                vscode.StatusBarAlignment.Right,
+                100
+            );
+
+            statusBarItem.text = `$(tools) ${quota.tier} - ${quota.remaining_quota} tokens left`;
+            statusBarItem.tooltip = `Daily Limit: ${quota.daily_limit}\nMonthly Limit: ${quota.monthly_limit}`;
+            statusBarItem.show();
+
+            this._disposables.push(statusBarItem);
+        } catch (error) {
+            console.warn('Failed to update status bar:', error);
+        }
+    }
+
+    private async _handleArchitectureAnalysis(): Promise<void> {
+        const workspaceFiles = await vscode.workspace.findFiles('**/*');
+
+        // Show progress notification
+        await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Analyzing workspace architecture...',
+            cancellable: false
+        }, async () => {
             try {
-                return Promise.resolve(d.dispose());
-            } catch (err) {
-                console.warn('Error disposing:', err);
-                return Promise.resolve();
+                const fileNames = workspaceFiles.map(file => file.fsPath.split('/').pop() || '');
+                const directories = Array.from(new Set(workspaceFiles.map(file => {
+                    const parts = file.fsPath.split('/');
+                    return parts[parts.length - 2] || '';
+                })));
+
+                const architecture = await this._apiService.detectArchitecture(fileNames, directories);
+
+                // Create and show report
+                const report = [
+                    `# Workspace Architecture Analysis\n`,
+                    `## Detected Framework: ${architecture.detected_framework}`,
+                    `Confidence: ${(architecture.confidence * 100).toFixed(1)}%\n`,
+                    `## Detected Markers`,
+                    architecture.markers.map(m => `- ${m}`).join('\n'),
+                    architecture.warnings?.length ? '\n## Warnings' : '',
+                    architecture.warnings?.map(w => `- ${w}`).join('\n') || ''
+                ].join('\n');
+
+                await this._panelManager.createResponsePanel(report);
+
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                vscode.window.showErrorMessage(`Architecture analysis failed: ${message}`);
             }
-        }));
-        this._disposables.length = 0;
+        });
     }
 
     private async _handleClaudeRequest(mode: 'general' | 'document'): Promise<void> {
@@ -62,6 +115,13 @@ export class ClaudeExtension {
         statusBarItem.show();
 
         try {
+            // First validate license
+            const isValid = await this._apiService.validateLicense();
+            if (!isValid) {
+                vscode.window.showErrorMessage('Invalid or expired license. Please check your API key.');
+                return;
+            }
+
             const editor = vscode.window.activeTextEditor;
             if (!editor) {
                 vscode.window.showInformationMessage('Please open a file and select some text first');
@@ -75,44 +135,51 @@ export class ClaudeExtension {
                 return;
             }
 
+            // Get workspace context for architecture detection
+            const workspaceFiles = await vscode.workspace.findFiles('**/*');
+            const fileNames = workspaceFiles.map(file => file.fsPath.split('/').pop() || '');
+            const directories = Array.from(new Set(workspaceFiles.map(file => {
+                const parts = file.fsPath.split('/');
+                return parts[parts.length - 2] || '';
+            })));
+
             const tokenSource = new vscode.CancellationTokenSource();
             this._context.subscriptions.push({ dispose: () => tokenSource.dispose() });
 
-            const response = await this._withProgress(mode, async (progress, token) => {
-                token.onCancellationRequested(() => tokenSource.cancel());
-                const prompt = mode === 'document'
-                    ? `Please document this code:\n\n${text}`
-                    : text;
-                return await this._apiService.askClaude(prompt, tokenSource.token);
-            });
+            // Make parallel requests
+            const [architecture, claudeResponse] = await Promise.all([
+                this._apiService.detectArchitecture(fileNames, directories),
+                this._withProgress(mode, async (progress, token) => {
+                    token.onCancellationRequested(() => tokenSource.cancel());
+                    const prompt = mode === 'document'
+                        ? `Please document this code:\n\n${text}`
+                        : text;
+                    return await this._claudeApiService.askClaude(prompt, tokenSource.token);
+                })
+            ]);
 
-            // Add the usage tracking here, after getting the response
-            const config = getConfiguration();
-            const tokens = response.usage?.input_tokens + response.usage?.output_tokens || 0;
+            // Track token usage
+            const tokens = claudeResponse.usage?.input_tokens + claudeResponse.usage?.output_tokens || 0;
+            await this._apiService.trackUsage(tokens);
 
-            if (config.apiKey) {
-                await fetch(`https://conscious-robot.com/api/license/${config.apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        tokens: tokens || 0
-                    })
-                }).catch(error => {
-                    // Log but don't throw - we don't want usage tracking to break the main functionality
-                    console.warn('Failed to track token usage:', error);
-                });
+            // Update status bar with new quota
+            await this._updateStatusBar();
+
+            // Format response with architecture info if relevant
+            let responseContent = this._formatResponse(text, claudeResponse, mode);
+
+            if (mode === 'document') {
+                responseContent += '\n\n## Workspace Analysis\n';
+                responseContent += `Detected Framework: ${architecture.detected_framework}\n`;
+                responseContent += `Confidence: ${(architecture.confidence * 100).toFixed(1)}%\n`;
+                responseContent += `\nMarkers:\n${architecture.markers.map(m => `- ${m}`).join('\n')}\n`;
+
+                if (architecture.warnings?.length) {
+                    responseContent += `\nWarnings:\n${architecture.warnings.map(w => `- ${w}`).join('\n')}\n`;
+                }
             }
 
-            await this._panelManager.createResponsePanel(
-                this._formatResponse(text, response, mode),
-                editor
-            );
-
-
-            await this._panelManager.createResponsePanel(
-                this._formatResponse(text, response, mode),
-                editor
-            );
+            await this._panelManager.createResponsePanel(responseContent, editor);
 
         } catch (error) {
             if (error instanceof vscode.CancellationError) {
@@ -168,5 +235,17 @@ export class ClaudeExtension {
             `*Using ${response.model}*`,
             `*Tokens: ${response.usage?.input_tokens} input, ${response.usage?.output_tokens} output*`
         ].join('\n');
+    }
+
+    public async dispose(): Promise<void> {
+        await Promise.all(this._disposables.map(d => {
+            try {
+                return Promise.resolve(d.dispose());
+            } catch (err) {
+                console.warn('Error disposing:', err);
+                return Promise.resolve();
+            }
+        }));
+        this._disposables.length = 0;
     }
 }
