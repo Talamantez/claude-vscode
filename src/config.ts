@@ -5,6 +5,7 @@ import { waitForExtensionReady } from './utils';
 export interface Configuration {
     model: string;
     apiKey?: string;
+    apiUrl: string;
 }
 
 // Extension timing configuration
@@ -39,7 +40,8 @@ export function getConfiguration(): Configuration {
 
     return {
         model,
-        apiKey: config.get('apiKey')
+        apiKey: config.get('apiKey'),
+        apiUrl: 'https://conscious-robot.com/api' // Default API URL
     };
 }
 
