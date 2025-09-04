@@ -70,7 +70,8 @@ This test:
 5. Verifies that the unexpected fields are not present in the returned object.
 6. Optionally, it could check if warnings are logged for unexpected fields, if that's part of the function's behavior.
 
-Remember to adjust the exact assertions based on the expected behavior of your `askClaude` function. This test ensures that your function can handle unexpected data in the API response without breaking or passing through unexpected fields.
+Remember to adjust the exact assertions based on the expected behavior of your `askClaude` function. 
+This test ensures that your function can handle unexpected data in the API response without breaking or passing through unexpected fields.
 
 ---
 *Using claude-3-5-sonnet-20240620*
