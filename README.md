@@ -1,3 +1,6 @@
+Warning: Large Language Models can not be trusted. They lie or 'Halluciante' constantly. They are trained to protect their corporate interests, not yours.
+
+
 # Claude AI Assistant
 
 The reliable, polished VS Code extension for Claude AI integration. Ask questions, generate documentation, and get AI assistance - all without leaving your editor.
@@ -56,5 +59,6 @@ No complex setup. No unexpected behaviors. Select text, right-click, and get you
 ---
 
 Made with ❤️ by Conscious Robot. Crafted for developers who value reliability and clean design.
+
 
 [GitHub](https://github.com/talamantez/claude-vscode)
